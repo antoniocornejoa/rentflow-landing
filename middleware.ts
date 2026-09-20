@@ -19,8 +19,14 @@ export function middleware(req: NextRequest): NextResponse {
   // Las rutas de API se sirven igual en cualquier host (health, ingesta, crons).
   if (path.startsWith("/api")) return NextResponse.next();
 
-  // Nadie accede directo a las ramas internas del ruteo.
-  if (path.startsWith("/sites") || path.startsWith("/panel")) {
+  // Nadie accede directo a las ramas internas del ruteo. Comparación por
+  // segmento exacto para no bloquear rutas legítimas como /paneles-solares.
+  if (
+    path === "/sites" ||
+    path.startsWith("/sites/") ||
+    path === "/panel" ||
+    path.startsWith("/panel/")
+  ) {
     return new NextResponse("Not found", { status: 404 });
   }
 

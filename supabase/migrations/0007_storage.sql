@@ -9,6 +9,7 @@ create or replace function public.safe_uuid(t text)
 returns uuid
 language plpgsql
 immutable
+set search_path = ''
 as $$
 begin
   return t::uuid;
@@ -16,6 +17,7 @@ exception when others then
   return null;
 end;
 $$;
+revoke execute on function public.safe_uuid(text) from public;
 grant execute on function public.safe_uuid(text) to anon, authenticated;
 
 -- Bucket público (imágenes world-readable para CDN/Lighthouse). Máx 5 MB, solo imágenes.
@@ -40,7 +42,7 @@ create policy "tenant_media_owner_insert" on storage.objects
   with check (
     bucket_id = 'tenant-media'
     and (
-      public.is_admin()
+      (select public.is_admin())
       or public.safe_uuid((storage.foldername(name))[1]) in (select public.current_tenant_ids())
     )
   );
@@ -50,14 +52,14 @@ create policy "tenant_media_owner_update" on storage.objects
   using (
     bucket_id = 'tenant-media'
     and (
-      public.is_admin()
+      (select public.is_admin())
       or public.safe_uuid((storage.foldername(name))[1]) in (select public.current_tenant_ids())
     )
   )
   with check (
     bucket_id = 'tenant-media'
     and (
-      public.is_admin()
+      (select public.is_admin())
       or public.safe_uuid((storage.foldername(name))[1]) in (select public.current_tenant_ids())
     )
   );
@@ -67,7 +69,7 @@ create policy "tenant_media_owner_delete" on storage.objects
   using (
     bucket_id = 'tenant-media'
     and (
-      public.is_admin()
+      (select public.is_admin())
       or public.safe_uuid((storage.foldername(name))[1]) in (select public.current_tenant_ids())
     )
   );

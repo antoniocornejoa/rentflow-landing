@@ -139,10 +139,14 @@ Configura el wildcard `*.midominio.cl` y el apex/`app` como dominios del proyect
    -- (repetir un patrón similar para tenant_theme desde plantilla_defaults.theme
    --  y crear la fila en public.subscriptions con monto y dia_cobro)
    ```
-2. **Apuntar el dominio**: inserta el/los hostnames en `public.tenant_domains`
-   (`hostname`, `is_primary`), agrega el dominio al proyecto en Vercel e indica al
-   cliente el registro DNS (A/CNAME). Mientras propaga, se puede publicar de inmediato
-   en `cliente.midominio.cl` (subdominio propio, bajo tu control).
+2. **Apuntar el dominio**: inserta el/los hostnames en `public.tenant_domains`.
+   Solo los dominios con `verificado = true` sirven la landing (gate de publicación).
+   - Publica de inmediato en tu subdominio propio bajo el wildcard (cert ya existe):
+     `insert into public.tenant_domains (tenant_id, hostname, is_primary, verificado)
+     values ('<id>', 'cliente.midominio.cl', true, true);`
+   - Para el dominio `.cl` del cliente: insértalo con `verificado = false`, agrégalo al
+     proyecto en Vercel e indica al cliente el registro DNS (A/CNAME). Cuando Vercel
+     confirme el dominio y emita el cert, cámbialo a `verificado = true`.
 3. **Publicar**: cuando el contenido esté listo, cambia `tenants.estado` a `'activo'`.
    (La invalidación de cache on-demand por tag se automatiza en la Fase 2/3.)
 

@@ -29,6 +29,8 @@ export function classifyHost(
   const host = normalizeHost(rawHost);
   const root = normalizeHost(rootDomain);
 
+  // Host ausente/vacío -> degradar al sitio comercial (evita /sites/ malformado).
+  if (host === "") return { kind: "marketing", host };
   if (host === root || host === `www.${root}`) return { kind: "marketing", host };
   if (host === `app.${root}`) return { kind: "platform", host };
   return { kind: "tenant", host };

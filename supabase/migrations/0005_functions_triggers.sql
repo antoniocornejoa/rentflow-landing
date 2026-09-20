@@ -6,6 +6,7 @@
 create or replace function public.set_updated_at()
 returns trigger
 language plpgsql
+set search_path = ''
 as $$
 begin
   new.updated_at := now();
@@ -34,6 +35,7 @@ create trigger set_updated_at before update on public.page_view_daily
 create or replace function public.tenants_before_update()
 returns trigger
 language plpgsql
+set search_path = ''
 as $$
 begin
   new.updated_at := now();
@@ -62,6 +64,10 @@ begin
   values (new.id, new.email)
   on conflict (id) do nothing;
   return new;
+exception
+  -- Un choque de email (espejo divergente) NUNCA debe abortar el alta en Auth.
+  when unique_violation then
+    return new;
 end;
 $$;
 
@@ -125,9 +131,11 @@ create or replace function public.is_admin()
 returns boolean
 language sql
 stable
+set search_path = ''
 as $$
   select coalesce((auth.jwt() -> 'app_metadata' ->> 'role') = 'admin', false);
 $$;
+revoke execute on function public.is_admin() from public;
 grant execute on function public.is_admin() to anon, authenticated;
 
 -- Conjunto de tenant_id del usuario actual (SECURITY DEFINER: sin recursión RLS).
@@ -217,3 +225,6 @@ $$;
 
 revoke execute on function public.custom_access_token_hook(jsonb) from public, anon, authenticated;
 grant execute on function public.custom_access_token_hook(jsonb) to supabase_auth_admin;
+-- GoTrue ejecuta el hook como supabase_auth_admin; ese rol necesita USAGE sobre
+-- el schema public para poder invocar la función (si no, falla TODO login/refresh).
+grant usage on schema public to supabase_auth_admin;

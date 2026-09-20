@@ -30,6 +30,11 @@ test.describe("classifyHost — resolución de tipo de host", () => {
     expect(classifyHost("taller.localhost:3000", rootDev).kind).toBe("tenant");
   });
 
+  test("host vacío o ausente -> marketing (defensivo)", () => {
+    expect(classifyHost("", ROOT).kind).toBe("marketing");
+    expect(classifyHost(null, ROOT).kind).toBe("marketing");
+  });
+
   test("normalizeHost: minúsculas y sin punto final", () => {
     expect(normalizeHost("Taller.CL.")).toBe("taller.cl");
     expect(normalizeHost(null)).toBe("");

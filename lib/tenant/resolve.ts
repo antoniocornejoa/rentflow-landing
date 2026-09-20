@@ -15,51 +15,75 @@ export interface ResolvedTenant {
   hostname: string;
 }
 
-/** Tag de cache por host para invalidar on-demand al editar/suspender un tenant. */
+/** Tag por host: invalidar cuando cambian los dominios de un tenant. */
 export function tenantHostTag(host: string): string {
   return `tenant-host:${host.toLowerCase()}`;
 }
 
-/** Tag de cache por tenant (para invalidar todos sus hosts a la vez, si se desea). */
+/** Tag por tenant: invalidar sus datos (estado/plantilla) en TODOS sus hosts a la vez. */
 export function tenantTag(tenantId: string): string {
   return `tenant:${tenantId}`;
 }
 
-async function fetchTenantByHost(host: string): Promise<ResolvedTenant | null> {
+// ── Capa 1: host -> tenant_id (solo dominios VERIFICADOS) ────────────────────
+async function fetchTenantIdByHost(host: string): Promise<string | null> {
   const supabase = createAdminClient();
-
-  const { data: domain, error: domainError } = await supabase
+  const { data, error } = await supabase
     .from("tenant_domains")
     .select("tenant_id")
     .eq("hostname", host)
+    .eq("verificado", true)
     .maybeSingle();
+  if (error) throw error;
+  return data?.tenant_id ?? null;
+}
 
-  if (domainError) throw domainError;
-  if (!domain) return null;
+function getTenantIdByHost(host: string): Promise<string | null> {
+  return unstable_cache(
+    () => fetchTenantIdByHost(host),
+    ["tenant-id-by-host", host],
+    { tags: [tenantHostTag(host)], revalidate: 3600 },
+  )();
+}
 
-  const { data: tenant, error: tenantError } = await supabase
+// ── Capa 2: tenant_id -> datos de render (invalidable por tenant) ────────────
+async function fetchTenantData(
+  tenantId: string,
+): Promise<Omit<ResolvedTenant, "hostname"> | null> {
+  const supabase = createAdminClient();
+  const { data, error } = await supabase
     .from("tenants")
     .select("id, slug, nombre_negocio, plantilla, estado")
-    .eq("id", domain.tenant_id)
+    .eq("id", tenantId)
     .maybeSingle();
+  if (error) throw error;
+  return data;
+}
 
-  if (tenantError) throw tenantError;
-  if (!tenant) return null;
-
-  return { ...tenant, hostname: host };
+function getTenantData(
+  tenantId: string,
+): Promise<Omit<ResolvedTenant, "hostname"> | null> {
+  return unstable_cache(
+    () => fetchTenantData(tenantId),
+    ["tenant-data", tenantId],
+    { tags: [tenantTag(tenantId)], revalidate: 3600 },
+  )();
 }
 
 /**
- * Resuelve el tenant a partir del host, cacheado (ISR: revalidate 3600 +
- * invalidación on-demand por tag). El render se hace con service_role, así que
- * también resuelve tenants suspendidos/morosos para decidir la página a mostrar.
+ * Resuelve el tenant a partir del host, en dos capas cacheadas:
+ *   1) host -> tenant_id  (tag: tenant-host:{host})   [solo dominios verificados]
+ *   2) tenant_id -> datos (tag: tenant:{id})          [invalidar al editar/suspender]
+ * Así `revalidateTag(tenant:{id})` refresca el estado/plantilla en todos los hosts,
+ * y `revalidateTag(tenant-host:{host})` refresca cuando cambian los dominios.
+ * El render usa service_role, por lo que resuelve también tenants suspendidos/morosos
+ * para decidir qué página mostrar.
  */
 export async function getTenantByHost(host: string): Promise<ResolvedTenant | null> {
   const normalized = host.toLowerCase();
-  const cached = unstable_cache(
-    () => fetchTenantByHost(normalized),
-    ["tenant-by-host", normalized],
-    { tags: [tenantHostTag(normalized)], revalidate: 3600 },
-  );
-  return cached();
+  const tenantId = await getTenantIdByHost(normalized);
+  if (!tenantId) return null;
+  const data = await getTenantData(tenantId);
+  if (!data) return null;
+  return { ...data, hostname: normalized };
 }

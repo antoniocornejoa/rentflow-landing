@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import type { CampoFormulario } from "@/lib/content/schema";
 import { captureTracking } from "@/lib/utm";
+import { TurnstileWidget } from "@/components/turnstile";
 
 const KNOWN_KEYS = ["nombre", "telefono", "email", "mensaje"] as const;
 
@@ -35,6 +36,7 @@ export function ContactForm({
   } = useForm<Valores>();
   const [enviado, setEnviado] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
 
   async function onSubmit(values: Valores) {
     setError(null);
@@ -68,6 +70,7 @@ export function ContactForm({
           mensaje,
           metadata,
           tracking: captureTracking(),
+          turnstileToken: turnstileToken ?? undefined,
         }),
       });
       if (!res.ok) throw new Error("fallo");
@@ -149,6 +152,8 @@ export function ContactForm({
           <span>Autorizo el uso de mis datos para ser contactado (Ley 19.628).</span>
         </label>
       ) : null}
+
+      <TurnstileWidget onToken={setTurnstileToken} />
 
       {error ? <p className="text-sm text-red-500">{error}</p> : null}
 

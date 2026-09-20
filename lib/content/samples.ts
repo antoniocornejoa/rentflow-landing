@@ -115,6 +115,7 @@ const gastronomia: z.input<typeof zGastronomia> = {
   formulario: {
     campos: [
       { nombre: "nombre", etiqueta: "Nombre", tipo: "texto", requerido: true },
+      { nombre: "telefono", etiqueta: "Teléfono", tipo: "telefono", requerido: true },
       { nombre: "mensaje", etiqueta: "Mensaje", tipo: "textarea", requerido: false },
     ],
   },

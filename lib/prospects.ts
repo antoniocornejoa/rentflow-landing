@@ -13,7 +13,8 @@ export const zProspectInput = z
     mensaje: z.string().max(2000).optional(),
     origen: z.string().max(120).optional(),
     tracking: zTracking.optional(),
-    hp: z.string().max(0).optional(),
+    hp: z.string().max(200).optional(),
+    turnstileToken: z.string().max(4096).optional(),
   })
   .strict()
   .superRefine((v, ctx) => {

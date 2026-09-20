@@ -22,7 +22,8 @@ export function CatalogoBlock({ catalogo, ctx }: { catalogo: ContenidoRetail["ca
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
               {cat.items.map((p, j) => {
                 const enOferta = typeof p.precio_oferta === "number";
-                const mensaje = `${consulta?.mensaje_plantilla ?? "Hola, consulto por:"} ${p.nombre}`;
+                const baseMsg = consulta?.mensaje_plantilla ?? "Hola, consulto por:";
+                const mensaje = consulta?.incluir_producto === false ? baseMsg : `${baseMsg} ${p.nombre}`;
                 return (
                   <article key={j} className="flex flex-col gap-2 rounded-2xl border border-black/5 bg-[var(--bg)] p-4 shadow-sm">
                     {p.imagen ? (

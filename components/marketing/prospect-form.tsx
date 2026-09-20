@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { captureTracking } from "@/lib/utm";
+import { TurnstileWidget } from "@/components/turnstile";
 
 type Valores = Record<string, string>;
 
@@ -12,6 +13,7 @@ export function ProspectForm() {
   const { register, handleSubmit, reset, formState: { isSubmitting } } = useForm<Valores>();
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
 
   async function onSubmit(values: Valores) {
     setError(null);
@@ -30,6 +32,7 @@ export function ProspectForm() {
           mensaje: values.mensaje,
           origen: "sitio-comercial",
           tracking: captureTracking(),
+          turnstileToken: turnstileToken ?? undefined,
         }),
       });
       if (!res.ok) throw new Error();
@@ -71,6 +74,7 @@ export function ProspectForm() {
         </select>
       </div>
       <textarea placeholder="Cuéntanos de tu negocio (opcional)" rows={3} className={field} {...register("mensaje")} />
+      <TurnstileWidget onToken={setTurnstileToken} />
       {error ? <p className="text-sm text-red-500">{error}</p> : null}
       <button
         type="submit"

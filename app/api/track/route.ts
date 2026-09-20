@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { deviceFromUserAgent } from "@/lib/utm";
+import { originAllowed } from "@/lib/request-origin";
 
 export const runtime = "nodejs";
 
@@ -37,12 +38,16 @@ export async function POST(req: Request) {
   const hdrs = await headers();
   const supabase = createAdminClient();
   // Solo registramos visitas de tenants activos (evita basura de dominios inactivos).
-  const { data: tenant } = await supabase
-    .from("tenants")
-    .select("estado")
-    .eq("id", parsed.data.tenant_id)
-    .maybeSingle();
+  const [{ data: tenant }, { data: domains }] = await Promise.all([
+    supabase.from("tenants").select("estado").eq("id", parsed.data.tenant_id).maybeSingle(),
+    supabase.from("tenant_domains").select("hostname").eq("tenant_id", parsed.data.tenant_id),
+  ]);
   if (!tenant || tenant.estado !== "activo") return NextResponse.json({ ok: true });
+
+  // La visita debe originarse en el sitio del propio tenant (evita spoofing).
+  if (!originAllowed(req, (domains ?? []).map((d) => d.hostname))) {
+    return NextResponse.json({ ok: true });
+  }
 
   await supabase.from("page_views").insert({
     tenant_id: parsed.data.tenant_id,

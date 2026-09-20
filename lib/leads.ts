@@ -10,17 +10,22 @@ export const zLeadInput = z
     telefono: z.string().max(40).optional(),
     email: z.string().email().max(200).optional().or(z.literal("")),
     mensaje: z.string().max(2000).optional(),
-    metadata: z.record(z.string(), z.unknown()).optional(),
+    metadata: z
+      .record(z.string().max(64), z.unknown())
+      .refine((m) => Object.keys(m).length <= 30 && JSON.stringify(m).length <= 4096, {
+        message: "metadata demasiado grande",
+      })
+      .optional(),
     tracking: zTracking.optional(),
-    // Anti-spam
-    hp: z.string().max(0).optional(), // honeypot: debe venir vacío
-    turnstileToken: z.string().optional(),
+    // Anti-spam: honeypot (se acepta con contenido para descartar en silencio).
+    hp: z.string().max(200).optional(),
+    turnstileToken: z.string().max(4096).optional(),
   })
   .strict()
   .superRefine((v, ctx) => {
-    // Un lead de formulario/llamada necesita al menos un dato de contacto.
-    if (v.origen !== "whatsapp" && !v.telefono && !v.email) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Ingresa teléfono o email" });
+    // Un lead que no es clic de WhatsApp necesita al menos un dato de contacto o mensaje.
+    if (v.origen !== "whatsapp" && !v.telefono && !v.email && !v.mensaje) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Ingresa teléfono, email o un mensaje" });
     }
   });
 

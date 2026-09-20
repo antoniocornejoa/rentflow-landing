@@ -47,7 +47,8 @@ insert into public.plantilla_defaults (plantilla, content, theme) values
                "pedido_whatsapp": {"activo": true, "incluir_items": true, "mensaje_plantilla": "Hola, quiero pedir:"}},
       "whatsapp": {"numero": "+56900000000", "mensaje_prellenado": "Hola, quiero hacer un pedido"},
       "seo": {"title": "Restaurante en Talca", "description": "Cocina rica en Talca. Pide por WhatsApp."},
-      "formulario": {"campos": [{"nombre": "nombre", "etiqueta": "Nombre", "tipo": "texto", "requerido": true}]}
+      "formulario": {"campos": [{"nombre": "nombre", "etiqueta": "Nombre", "tipo": "texto", "requerido": true},
+                                {"nombre": "telefono", "etiqueta": "Teléfono", "tipo": "telefono", "requerido": true}]}
     }$json$::jsonb,
     '{"colores": {"primary": "#b45309", "bg": "#fffdf7", "text": "#1c1917"}, "tipografia": {"heading": "Inter", "body": "Inter"}}'::jsonb
   ),

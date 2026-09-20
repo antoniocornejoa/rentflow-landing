@@ -14,7 +14,8 @@ export function MenuBlock({ menu, ctx }: { menu: ContenidoGastronomia["menu"]; c
             <h3 className="mb-3 border-b border-black/10 pb-2 text-xl font-semibold">{cat.nombre}</h3>
             <ul className="divide-y divide-black/5">
               {cat.items.map((item, j) => {
-                const mensaje = `${pedido?.mensaje_plantilla ?? "Hola, quiero pedir:"} ${item.nombre}`;
+                const base = pedido?.mensaje_plantilla ?? "Hola, quiero pedir:";
+                const mensaje = pedido?.incluir_items === false ? base : `${base} ${item.nombre}`;
                 return (
                   <li key={j} className="flex items-start justify-between gap-4 py-3">
                     <div>

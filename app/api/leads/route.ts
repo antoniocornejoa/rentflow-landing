@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import type { Json } from "@/lib/supabase/database.types";
 import { deviceFromUserAgent } from "@/lib/utm";
 import { verifyTurnstile } from "@/lib/turnstile";
+import { originAllowed } from "@/lib/request-origin";
 import { sendEmail, escapeHtml } from "@/lib/email";
 
 export const runtime = "nodejs";
@@ -18,33 +19,37 @@ export async function POST(req: Request) {
   }
 
   const parsed = zLeadInput.safeParse(json);
-  if (!parsed.success) {
-    return NextResponse.json({ error: "datos inválidos" }, { status: 422 });
-  }
+  if (!parsed.success) return NextResponse.json({ error: "datos inválidos" }, { status: 422 });
   const input = parsed.data;
 
-  // Honeypot: aceptamos silenciosamente pero descartamos (no alertar al bot).
+  // Honeypot: aceptar en silencio y descartar (no alertar al bot).
   if (input.hp) return NextResponse.json({ ok: true });
 
   const hdrs = await headers();
   const ip = hdrs.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null;
 
-  // Turnstile solo se exige para envíos de formulario (el clic WhatsApp no lo tiene).
-  if (input.origen === "formulario") {
-    const ok = await verifyTurnstile(input.turnstileToken, ip);
-    if (!ok) return NextResponse.json({ error: "verificación anti-spam falló" }, { status: 403 });
-  }
-
   const supabase = createAdminClient();
 
-  const { data: tenant, error: tenantError } = await supabase
-    .from("tenants")
-    .select("id, estado, nombre_negocio")
-    .eq("id", input.tenant_id)
-    .maybeSingle();
+  const [{ data: tenant, error: tenantError }, { data: domains }] = await Promise.all([
+    supabase.from("tenants").select("id, estado, nombre_negocio").eq("id", input.tenant_id).maybeSingle(),
+    supabase.from("tenant_domains").select("hostname").eq("tenant_id", input.tenant_id),
+  ]);
   if (tenantError) return NextResponse.json({ error: "error" }, { status: 500 });
   if (!tenant || tenant.estado !== "activo") {
     return NextResponse.json({ error: "tenant no disponible" }, { status: 404 });
+  }
+
+  // El lead debe originarse en el propio sitio del tenant (evita spoofing cruzado).
+  const allowedHosts = (domains ?? []).map((d) => d.hostname);
+  if (!originAllowed(req, allowedHosts)) {
+    return NextResponse.json({ error: "origen no permitido" }, { status: 403 });
+  }
+
+  // Turnstile para todo lead que persiste con datos (no el clic de WhatsApp).
+  // verifyTurnstile devuelve true si no hay secret configurado (no bloquea en dev).
+  if (input.origen !== "whatsapp") {
+    const ok = await verifyTurnstile(input.turnstileToken, ip);
+    if (!ok) return NextResponse.json({ error: "verificación anti-spam falló" }, { status: 403 });
   }
 
   const t = input.tracking ?? {};
@@ -74,8 +79,8 @@ export async function POST(req: Request) {
 
   if (insertError) return NextResponse.json({ error: "no se pudo guardar" }, { status: 500 });
 
-  // Notificación al dueño (best-effort; el clic de WhatsApp no dispara email).
-  if (input.origen !== "whatsapp") {
+  // Notificación al dueño solo para envíos de formulario (verificados por Turnstile).
+  if (input.origen === "formulario") {
     void notifyOwner(supabase, tenant.id, tenant.nombre_negocio, input);
   }
 
@@ -106,7 +111,10 @@ async function notifyOwner(
       ["Mensaje", input.mensaje],
     ]
       .filter(([, v]) => v)
-      .map(([k, v]) => `<tr><td style="padding:4px 12px 4px 0;color:#64748b">${k}</td><td style="padding:4px 0">${escapeHtml(String(v))}</td></tr>`)
+      .map(
+        ([k, v]) =>
+          `<tr><td style="padding:4px 12px 4px 0;color:#64748b">${k}</td><td style="padding:4px 0">${escapeHtml(String(v))}</td></tr>`,
+      )
       .join("");
 
     await sendEmail({

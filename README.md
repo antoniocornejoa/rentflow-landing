@@ -5,8 +5,25 @@ Next.js en Vercel + una sola base Postgres en Supabase sirven a todos los client
 Dar de alta un cliente = **crear un registro + apuntar un dominio**. Cero código y
 cero deploy por cliente.
 
-> Estado: **Fase 1** (setup, esquema de BD, RLS y middleware multi-tenant).
-> Ver `docs/fase-1-diseno.md` para el diseño completo y las decisiones tomadas.
+> Estado: **Fases 1–6 completas** (setup + BD/RLS + motor de landings con 4
+> plantillas + captación de leads + panel admin + portal del cliente + reportes
+> automáticos + sitio comercial). Falta aplicar las migraciones a un Supabase real
+> y desplegar. Ver `docs/fase-1-diseno.md` para el diseño y las decisiones.
+
+### Módulos
+
+- **Motor de landings** (`/sites/[domain]`): 4 plantillas (servicios, gastronomía,
+  inmobiliaria, retail) sobre el mismo jsonb, tema por tenant, WhatsApp que registra
+  el clic como lead, formulario → lead + correo, UTM, analítica sin cookies, SEO por
+  tenant (Schema.org, OG, robots, sitemap).
+- **Panel admin** (`app.` → `/`): dashboard (MRR, activos, leads, churn), alta de
+  cliente, editor de contenido con vista previa, suspensión.
+- **Portal del cliente** (`app.` → `/`, rol cliente): sus leads (responder por
+  WhatsApp, marcar atendido), gráficos 6 meses, editar datos básicos, cambios mayores.
+- **Reportes automáticos** (Vercel Cron): rollup diario de analítica y reporte
+  mensual por correo el día 1.
+- **Sitio comercial** (`midominio.cl`): planes, demos, calculadora y captación de
+  prospectos.
 
 ---
 
@@ -166,11 +183,23 @@ npm run test:e2e       # Playwright: routing por host + aislamiento RLS
 
 Los tests de envío de formulario y clic de WhatsApp llegan con la Fase 5.
 
+## Cron (Vercel)
+
+`vercel.json` define dos tareas (protegidas con `CRON_SECRET`):
+
+- `/api/cron/rollup` — diaria (05:00 UTC): agrega `page_views` → `page_view_daily`,
+  crea particiones futuras y purga las crudas antiguas.
+- `/api/cron/monthly` — día 1 (06:00 UTC): genera y envía el reporte mensual por
+  tenant y lo guarda en `monthly_reports`.
+
 ## Roadmap por fases
 
 1. ✅ Setup, esquema, migraciones, RLS, middleware multi-tenant
-2. Motor de landings + plantilla `servicios`
-3. Las otras 3 plantillas
-4. Panel de administración
-5. Portal del cliente + captura de leads end-to-end
-6. Reportes automáticos + sitio comercial
+2. ✅ Motor de landings + plantilla `servicios`
+3. ✅ Las otras 3 plantillas
+4. ✅ Panel de administración
+5. ✅ Portal del cliente + captura de leads end-to-end
+6. ✅ Reportes automáticos + sitio comercial
+
+**Pendiente para producción:** crear el proyecto Supabase, aplicar migraciones,
+habilitar el auth hook, configurar variables en Vercel y apuntar dominios.

@@ -136,7 +136,11 @@ export type Database = {
       };
     };
     Views: { [_ in never]: never };
-    Functions: { [_ in never]: never };
+    Functions: {
+      page_views_ensure_partitions: { Args: Record<PropertyKey, never>; Returns: undefined };
+      page_views_create_partition: { Args: { p_month: string }; Returns: undefined };
+      page_views_drop_partition: { Args: { p_month: string }; Returns: undefined };
+    };
     Enums: Enums;
     CompositeTypes: { [_ in never]: never };
   };

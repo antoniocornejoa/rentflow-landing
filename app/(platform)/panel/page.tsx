@@ -1,23 +1,30 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
+import { getAppUser } from "@/lib/auth";
+import { PanelShell } from "@/components/panel/shell";
+import { AdminDashboard } from "@/components/panel/admin/dashboard";
+import { ClientPortal } from "@/components/panel/portal/portal";
 
-export const metadata: Metadata = {
-  title: "Panel",
-  robots: { index: false, follow: false },
-};
+export const metadata: Metadata = { title: "Panel", robots: { index: false, follow: false } };
+export const dynamic = "force-dynamic";
 
-/**
- * Entrada de app.midominio.cl (panel admin + portal cliente).
- * Placeholder de Fase 1. El panel (Fase 4) y el portal (Fase 5) se construyen
- * sobre esta rama tras el login por magic link.
- */
-export default function PanelHome() {
-  return (
-    <main className="mx-auto flex min-h-dvh max-w-2xl flex-col items-center justify-center gap-4 px-4 py-16 text-center">
-      <h1 className="text-3xl font-semibold">Panel RentFlow</h1>
-      <p className="text-[var(--muted)]">
-        Aquí vivirán el panel de administración (Fase 4) y el portal del cliente
-        (Fase 5). Acceso por enlace mágico (magic link).
-      </p>
-    </main>
-  );
+export default async function PanelHome() {
+  const user = await getAppUser();
+  if (!user) redirect("/login");
+
+  if (user.rol === "admin") {
+    return (
+      <PanelShell
+        user={user}
+        nav={[
+          { href: "/", label: "Resumen" },
+          { href: "/tenants/nuevo", label: "Nuevo cliente" },
+        ]}
+      >
+        <AdminDashboard />
+      </PanelShell>
+    );
+  }
+
+  return <ClientPortal user={user} />;
 }

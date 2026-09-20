@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { classifyHost } from "@/lib/domains";
+import { refreshSession } from "@/lib/supabase/middleware-session";
 
 const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? "localhost:3000";
 
@@ -12,7 +13,7 @@ const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? "localhost:3000";
  *   app.{root}           -> panel + portal             (reescribe a /panel/*)
  *   otro host            -> landing del tenant          (reescribe a /sites/{host}/*)
  */
-export function middleware(req: NextRequest): NextResponse {
+export async function middleware(req: NextRequest): Promise<NextResponse> {
   const url = req.nextUrl.clone();
   const path = url.pathname;
 
@@ -38,7 +39,10 @@ export function middleware(req: NextRequest): NextResponse {
 
   if (kind === "platform") {
     url.pathname = `/panel${path === "/" ? "" : path}`;
-    return NextResponse.rewrite(url);
+    const res = NextResponse.rewrite(url);
+    // Refresca la sesión de Supabase (panel + portal usan magic link).
+    await refreshSession(req, res);
+    return res;
   }
 
   // tenant

@@ -22,13 +22,23 @@ test("host raíz -> sitio comercial", async ({ request }) => {
   expect(await res.text()).toContain("capta clientes");
 });
 
-test("app.{root} -> panel", async ({ request }) => {
-  const res = await request.get(`${base}/`, { headers: { host: `app.localhost:${PORT}` } });
-  expect(res.status()).toBe(200);
-  expect(await res.text()).toContain("Panel RentFlow");
+test("app.{root} sin sesión -> redirige al login", async ({ request }) => {
+  const res = await request.get(`${base}/`, {
+    headers: { host: `app.localhost:${PORT}` },
+    maxRedirects: 0,
+  });
+  // El panel requiere sesión: responde con redirección a /login.
+  expect([302, 303, 307, 308]).toContain(res.status());
+  expect(res.headers()["location"] ?? "").toContain("/login");
 });
 
 test("acceso directo a ruta interna -> 404", async ({ request }) => {
   const res = await request.get(`${base}/sites/cualquier-cosa`);
   expect(res.status()).toBe(404);
+});
+
+test("app.{root}/login -> pantalla de acceso por enlace mágico", async ({ request }) => {
+  const res = await request.get(`${base}/login`, { headers: { host: `app.localhost:${PORT}` } });
+  expect(res.status()).toBe(200);
+  expect(await res.text()).toContain("enlace mágico");
 });

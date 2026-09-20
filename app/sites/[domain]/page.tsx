@@ -1,51 +1,81 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getTenantByHost } from "@/lib/tenant/resolve";
+import { getTenantRender } from "@/lib/tenant/content";
+import { storageUrl } from "@/lib/storage";
 import { ComingSoon } from "@/components/estados/coming-soon";
 import { Mantencion } from "@/components/estados/mantencion";
+import { TenantLanding } from "@/components/landing/tenant-landing";
+import { PageviewBeacon } from "@/components/landing/pageview-beacon";
 
-// ISR: la página se regenera cada hora y se invalida on-demand por tag al editar.
+// ISR: se regenera cada hora y se invalida on-demand por tag al editar/suspender.
 export const revalidate = 3600;
 
 interface PageProps {
   params: Promise<{ domain: string }>;
 }
 
-/**
- * Landing de un tenant. El host llega en `params.domain` (reescrito por el
- * middleware). Resolvemos el tenant y decidimos el render según su estado.
- * En Fase 2 el estado 'activo' renderiza la plantilla real; aquí va un
- * placeholder que demuestra la resolución multi-tenant.
- */
+function imgUrl(path: string): string {
+  return /^https?:\/\//.test(path) ? path : storageUrl(path);
+}
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { domain } = await params;
+  const host = decodeURIComponent(domain);
+  const tenant = await getTenantByHost(host);
+
+  if (!tenant || tenant.estado === "cancelado") {
+    return { title: "Sitio no encontrado", robots: { index: false, follow: false } };
+  }
+  if (tenant.estado !== "activo") {
+    return { title: tenant.nombre_negocio, robots: { index: false, follow: false } };
+  }
+
+  const { content } = await getTenantRender(tenant.id);
+  if (!content) return { title: tenant.nombre_negocio, robots: { index: false, follow: false } };
+
+  const seo = content.seo;
+  const og = seo.og_image ?? content.hero.imagen;
+  return {
+    title: seo.title,
+    description: seo.description,
+    robots: seo.indexable ? undefined : { index: false, follow: false },
+    alternates: { canonical: seo.canonical ?? `https://${host}` },
+    openGraph: {
+      title: seo.title,
+      description: seo.description,
+      url: `https://${host}`,
+      type: "website",
+      images: og ? [{ url: imgUrl(og.path) }] : undefined,
+    },
+  };
+}
+
 export default async function TenantLandingPage({ params }: PageProps) {
   const { domain } = await params;
   const host = decodeURIComponent(domain);
   const tenant = await getTenantByHost(host);
 
-  // Dominio sin tenant, o tenant cancelado -> 404 neutro.
   if (!tenant || tenant.estado === "cancelado") notFound();
-
-  if (tenant.estado === "onboarding") {
-    return <ComingSoon nombre={tenant.nombre_negocio} />;
-  }
-
+  if (tenant.estado === "onboarding") return <ComingSoon nombre={tenant.nombre_negocio} />;
   if (tenant.estado === "suspendido" || tenant.estado === "moroso") {
     return <Mantencion nombre={tenant.nombre_negocio} />;
   }
 
-  // estado === 'activo' -> placeholder de Fase 1 (Fase 2 renderiza la plantilla).
+  const { content, theme } = await getTenantRender(tenant.id);
+  // Fallback seguro: si el jsonb es inválido o falta, no caemos con error.
+  if (!content) return <Mantencion nombre={tenant.nombre_negocio} />;
+
   return (
-    <main className="mx-auto flex min-h-dvh max-w-xl flex-col items-center justify-center gap-4 px-4 py-16 text-center">
-      <span className="rounded-full border border-current/15 px-3 py-1 text-xs font-medium text-[var(--muted)]">
-        Plantilla: {tenant.plantilla}
-      </span>
-      <h1 className="text-3xl font-semibold">{tenant.nombre_negocio}</h1>
-      <p className="text-[var(--muted)]">
-        Tenant resuelto correctamente desde <code>{host}</code>.
-      </p>
-      <p className="text-sm text-[var(--muted)]">
-        La landing con la plantilla <strong>{tenant.plantilla}</strong> se
-        construye en la Fase 2.
-      </p>
-    </main>
+    <>
+      <TenantLanding
+        content={content}
+        nombreNegocio={tenant.nombre_negocio}
+        tenantId={tenant.id}
+        theme={theme}
+        url={`https://${host}`}
+      />
+      <PageviewBeacon tenantId={tenant.id} />
+    </>
   );
 }

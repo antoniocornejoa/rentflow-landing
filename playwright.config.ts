@@ -1,6 +1,12 @@
+import { existsSync } from "node:fs";
 import { defineConfig } from "@playwright/test";
 
 const PORT = 3000;
+
+// En este entorno hay un Chromium preinstalado en una ruta fija; úsalo si existe
+// (evita "npx playwright install"). En local/CI normal, usa el navegador por defecto.
+const PREINSTALLED_CHROMIUM = "/opt/pw-browsers/chromium";
+const executablePath = existsSync(PREINSTALLED_CHROMIUM) ? PREINSTALLED_CHROMIUM : undefined;
 
 /**
  * Los tests E2E levantan el servidor de Next automáticamente.
@@ -18,6 +24,7 @@ export default defineConfig({
   use: {
     baseURL: `http://localhost:${PORT}`,
     trace: "on-first-retry",
+    ...(executablePath ? { launchOptions: { executablePath } } : {}),
   },
   webServer: {
     command: "npm run dev",

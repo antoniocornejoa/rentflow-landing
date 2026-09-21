@@ -79,9 +79,9 @@ export function ProspectForm() {
       <button
         type="submit"
         disabled={isSubmitting}
-        className="rounded-full bg-[var(--brand)] px-6 py-3 font-semibold text-white disabled:opacity-60"
+        className="rounded-full bg-gradient-to-r from-[#0f766e] to-[#10b981] px-6 py-3 font-semibold text-white shadow-lg shadow-emerald-500/20 transition hover:brightness-105 disabled:opacity-60"
       >
-        {isSubmitting ? "Enviando…" : "Quiero mi landing"}
+        {isSubmitting ? "Enviando…" : "Quiero mi página"}
       </button>
     </form>
   );

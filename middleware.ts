@@ -33,6 +33,13 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
 
   const { kind, host } = classifyHost(req.headers.get("host"), ROOT_DOMAIN);
 
+  // Sin Supabase configurado no hay tenants: servir el sitio comercial + demos
+  // para cualquier host (evita errores antes de conectar la base de datos).
+  const supabaseConfigurado = Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL);
+  if (kind === "tenant" && !supabaseConfigurado) {
+    return NextResponse.next();
+  }
+
   if (kind === "marketing") {
     return NextResponse.next();
   }

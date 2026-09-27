@@ -27,6 +27,7 @@ type Enums = {
   change_request_estado: "pendiente" | "en_proceso" | "completado" | "rechazado";
   prioridad: "baja" | "media" | "alta";
   prospect_estado: "nuevo" | "contactado" | "propuesta" | "convertido" | "descartado";
+  job_estado: "running" | "success" | "error";
 };
 
 export type Database = {
@@ -132,6 +133,24 @@ export type Database = {
         Row: { plantilla: Enums["plantilla_tipo"]; content: Json; theme: Json; updated_at: string };
         Insert: { plantilla: Enums["plantilla_tipo"]; content: Json; theme?: Json; updated_at?: string };
         Update: Partial<Database["public"]["Tables"]["plantilla_defaults"]["Insert"]>;
+        Relationships: [];
+      };
+      audit_log: {
+        Row: { id: string; actor_id: string | null; actor_email: string | null; actor_rol: Enums["app_rol"] | null; accion: string; entidad: string | null; entidad_id: string | null; tenant_id: string | null; detalle: Json; ip: string | null; user_agent: string | null; created_at: string };
+        Insert: { id?: string; actor_id?: string | null; actor_email?: string | null; actor_rol?: Enums["app_rol"] | null; accion: string; entidad?: string | null; entidad_id?: string | null; tenant_id?: string | null; detalle?: Json; ip?: string | null; user_agent?: string | null; created_at?: string };
+        Update: Partial<Database["public"]["Tables"]["audit_log"]["Insert"]>;
+        Relationships: [];
+      };
+      job_runs: {
+        Row: { id: string; job: string; estado: Enums["job_estado"]; started_at: string; finished_at: string | null; duration_ms: number | null; detalle: Json; error: string | null; created_at: string };
+        Insert: { id?: string; job: string; estado?: Enums["job_estado"]; started_at?: string; finished_at?: string | null; duration_ms?: number | null; detalle?: Json; error?: string | null; created_at?: string };
+        Update: Partial<Database["public"]["Tables"]["job_runs"]["Insert"]>;
+        Relationships: [];
+      };
+      error_events: {
+        Row: { id: string; nivel: string; origen: string; mensaje: string; detalle: Json; tenant_id: string | null; created_at: string };
+        Insert: { id?: string; nivel?: string; origen: string; mensaje: string; detalle?: Json; tenant_id?: string | null; created_at?: string };
+        Update: Partial<Database["public"]["Tables"]["error_events"]["Insert"]>;
         Relationships: [];
       };
     };

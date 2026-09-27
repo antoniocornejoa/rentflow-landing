@@ -2,6 +2,7 @@
 
 import { z } from "zod";
 import { requireUser } from "@/lib/auth";
+import { logAudit } from "@/lib/monitoring";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { userTenantIds } from "@/lib/portal/data";
 import { revalidateTenant } from "@/lib/tenant/revalidate";
@@ -25,6 +26,7 @@ export async function markLeadAttended(leadId: string): Promise<{ ok: boolean }>
     .from("leads")
     .update({ estado: "atendido", atendido_at: new Date().toISOString(), atendido_por: user.id })
     .eq("id", leadId);
+  await logAudit({ actor: user, accion: "lead.atendido", entidad: "lead", entidadId: leadId, tenantId: lead.tenant_id });
   return { ok: true };
 }
 
@@ -73,6 +75,7 @@ export async function savePortalBasics(_prev: { ok?: boolean; error?: string }, 
     .eq("tenant_id", tenant_id);
   if (error) return { error: "No se pudo guardar" };
 
+  await logAudit({ actor: user, accion: "contenido.editado", entidad: "tenant_content", tenantId: tenant_id });
   revalidateTenant(tenant_id);
   return { ok: true };
 }
@@ -102,6 +105,8 @@ export async function createChangeRequest(_prev: { ok?: boolean; error?: string 
     descripcion,
   });
   if (error) return { error: "No se pudo enviar la solicitud" };
+
+  await logAudit({ actor: user, accion: "cambio.solicitado", entidad: "change_request", tenantId: tenant_id, detalle: { titulo, tipo } });
 
   const ops = process.env.OPERADOR_EMAIL;
   if (ops) {

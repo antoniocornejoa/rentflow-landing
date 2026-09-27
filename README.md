@@ -20,10 +20,15 @@ cero deploy por cliente.
   cliente, editor de contenido con vista previa, suspensión.
 - **Portal del cliente** (`app.` → `/`, rol cliente): sus leads (responder por
   WhatsApp, marcar atendido), gráficos 6 meses, editar datos básicos, cambios mayores.
+- **Monitoreo y logs** (`app.` → `/monitoreo`, sólo admin): estado del sistema,
+  alertas de negocio (morosos, suspendidos, pagos, onboarding estancado, activos sin
+  leads), historial de tareas automáticas (`job_runs`), auditoría de acciones
+  (`audit_log`: quién hizo qué) y registro de errores (`error_events`). La escritura
+  la hacen las acciones/crons con `service_role`; la lectura es sólo admin (RLS).
 - **Reportes automáticos** (Vercel Cron): rollup diario de analítica y reporte
-  mensual por correo el día 1.
-- **Sitio comercial** (`midominio.cl`): planes, demos, calculadora y captación de
-  prospectos.
+  mensual por correo el día 1. Cada corrida queda registrada en `job_runs`.
+- **Sitio comercial** (`midominio.cl`): planes, demos por rubro y captación de
+  prospectos (sin datos inventados).
 
 ---
 

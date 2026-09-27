@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdmin } from "@/lib/auth";
+import { logAudit } from "@/lib/monitoring";
 import { ROOT_DOMAIN } from "@/lib/env";
 import { revalidateTenant } from "@/lib/tenant/revalidate";
 import { schemaPorPlantilla, type Plantilla } from "@/lib/content/schema";
@@ -27,7 +28,7 @@ export type AltaState = { error?: string };
 
 /** Alta de cliente: tenant + contenido/tema semilla + suscripción + dominio + dueño. */
 export async function createTenant(_prev: AltaState, formData: FormData): Promise<AltaState> {
-  await requireAdmin();
+  const admin = await requireAdmin();
 
   const parsed = zAlta.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
@@ -105,24 +106,41 @@ export async function createTenant(_prev: AltaState, formData: FormData): Promis
     await supabase.from("tenant_users").insert({ tenant_id: tenantId, user_id: ownerId, rol: "propietario" });
   }
 
+  await logAudit({
+    actor: admin,
+    accion: "tenant.creado",
+    entidad: "tenant",
+    entidadId: tenantId,
+    tenantId,
+    detalle: { nombre_negocio: input.nombre_negocio, slug: input.slug, plan: input.plan, plantilla: input.plantilla },
+  });
+
   redirect(`/tenants/${tenantId}`);
 }
 
 /** Cambia el estado del tenant (activar / suspender / etc.) e invalida su cache. */
 export async function setTenantEstado(tenantId: string, estado: string): Promise<void> {
-  await requireAdmin();
+  const admin = await requireAdmin();
   const parsed = z
     .enum(["onboarding", "activo", "suspendido", "moroso", "cancelado"])
     .safeParse(estado);
   if (!parsed.success) return;
   const supabase = createAdminClient();
   await supabase.from("tenants").update({ estado: parsed.data }).eq("id", tenantId);
+  await logAudit({
+    actor: admin,
+    accion: "tenant.estado",
+    entidad: "tenant",
+    entidadId: tenantId,
+    tenantId,
+    detalle: { estado: parsed.data },
+  });
   revalidateTenant(tenantId);
 }
 
 /** Guarda y publica el contenido de un tenant (validado con Zod). */
 export async function saveContent(tenantId: string, plantilla: Plantilla, rawJson: string): Promise<{ ok: boolean; error?: string }> {
-  await requireAdmin();
+  const admin = await requireAdmin();
 
   let parsedJson: unknown;
   try {
@@ -144,6 +162,13 @@ export async function saveContent(tenantId: string, plantilla: Plantilla, rawJso
     .eq("tenant_id", tenantId);
   if (error) return { ok: false, error: "No se pudo guardar" };
 
+  await logAudit({
+    actor: admin,
+    accion: "contenido.publicado",
+    entidad: "tenant_content",
+    tenantId,
+    detalle: { plantilla },
+  });
   revalidateTenant(tenantId);
   return { ok: true };
 }

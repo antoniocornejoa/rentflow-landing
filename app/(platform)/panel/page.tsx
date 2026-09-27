@@ -4,6 +4,7 @@ import { getAppUser } from "@/lib/auth";
 import { PanelShell } from "@/components/panel/shell";
 import { AdminDashboard } from "@/components/panel/admin/dashboard";
 import { ClientPortal } from "@/components/panel/portal/portal";
+import { ADMIN_NAV } from "@/lib/admin/nav";
 
 export const metadata: Metadata = { title: "Panel", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -14,13 +15,7 @@ export default async function PanelHome() {
 
   if (user.rol === "admin") {
     return (
-      <PanelShell
-        user={user}
-        nav={[
-          { href: "/", label: "Resumen" },
-          { href: "/tenants/nuevo", label: "Nuevo cliente" },
-        ]}
-      >
+      <PanelShell user={user} nav={ADMIN_NAV}>
         <AdminDashboard />
       </PanelShell>
     );

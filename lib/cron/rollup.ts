@@ -23,18 +23,20 @@ export async function runRollup(): Promise<{ fecha: string; tenants: number }> {
   const supabase = createAdminClient();
 
   // Mantener particiones del mes actual y próximos.
-  await supabase.rpc("page_views_ensure_partitions");
+  const { error: ensureErr } = await supabase.rpc("page_views_ensure_partitions");
+  if (ensureErr) throw ensureErr;
 
   const now = new Date();
   const inicio = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - 1));
   const fin = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
   const fecha = inicio.toISOString().slice(0, 10);
 
-  const { data: rows } = await supabase
+  const { data: rows, error: readErr } = await supabase
     .from("page_views")
     .select("tenant_id, path, referrer_host, device")
     .gte("created_at", inicio.toISOString())
     .lt("created_at", fin.toISOString());
+  if (readErr) throw readErr;
 
   const per = new Map<
     string,
@@ -63,12 +65,14 @@ export async function runRollup(): Promise<{ fecha: string; tenants: number }> {
   }));
 
   if (upserts.length) {
-    await supabase.from("page_view_daily").upsert(upserts, { onConflict: "tenant_id,fecha" });
+    const { error: upErr } = await supabase.from("page_view_daily").upsert(upserts, { onConflict: "tenant_id,fecha" });
+    if (upErr) throw upErr;
   }
 
   // Purga la partición cruda de hace ~4 meses (el histórico vive en el rollup).
   const viejo = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 4, 1));
-  await supabase.rpc("page_views_drop_partition", { p_month: viejo.toISOString().slice(0, 10) });
+  const { error: dropErr } = await supabase.rpc("page_views_drop_partition", { p_month: viejo.toISOString().slice(0, 10) });
+  if (dropErr) throw dropErr;
 
   return { fecha, tenants: upserts.length };
 }

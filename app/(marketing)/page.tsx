@@ -239,7 +239,7 @@ export default async function MarketingHome() {
             return (
               <div key={p.plan} className={`relative flex flex-col gap-4 rounded-3xl bg-[var(--background)] p-7 ${featured ? "border-2 border-[var(--brand)] shadow-lg sm:scale-[1.03]" : "border border-[var(--border)] shadow-sm"}`}>
                 {featured ? (
-                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[var(--accent)] px-3 py-0.5 text-xs font-semibold text-slate-900">Más elegido</span>
+                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[var(--accent)] px-3 py-0.5 text-xs font-semibold text-slate-900">Recomendado</span>
                 ) : null}
                 <h3 className="font-display text-xl font-bold">{p.nombre}</h3>
                 <p className="font-display text-4xl font-extrabold tabular-nums">

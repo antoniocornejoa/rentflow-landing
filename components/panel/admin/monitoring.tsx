@@ -70,6 +70,12 @@ export async function MonitoringView() {
     <div className="flex flex-col gap-8">
       <h1 className="text-2xl font-semibold">Monitoreo y logs</h1>
 
+      {salud.degradado ? (
+        <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          ⚠️ Algunas consultas de monitoreo no respondieron; los números de abajo pueden estar incompletos. Reintenta en unos minutos.
+        </div>
+      ) : null}
+
       {/* Estado del sistema */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Kpi label="Base de datos" value={salud.dbOk ? "Operativa" : "Con problemas"} />

@@ -41,6 +41,7 @@ export interface Alerta {
 export interface MonitoringOverview {
   salud: {
     dbOk: boolean;
+    degradado: boolean;
     ultimoRollup: JobRunRow | null;
     ultimoMonthly: JobRunRow | null;
     erroresUlt24h: number;
@@ -76,7 +77,19 @@ export async function getMonitoringOverview(): Promise<MonitoringOverview> {
       supabase.from("leads").select("tenant_id, created_at").gte("created_at", hace30d),
     ]);
 
-  const dbOk = !jobsRes.error;
+  const dbOk = !jobsRes.error && !tenantsRes.error;
+  const degradado = [
+    jobsRes,
+    rollupRes,
+    monthlyRes,
+    err24Res,
+    jobsFail7Res,
+    auditRes,
+    erroresRes,
+    tenantsRes,
+    subsRes,
+    leads30Res,
+  ].some((r) => r.error);
   const jobs = (jobsRes.data ?? []) as JobRunRow[];
   const tenants = tenantsRes.data ?? [];
   const tenantNombre = new Map(tenants.map((t) => [t.id, t.nombre_negocio]));
@@ -120,6 +133,7 @@ export async function getMonitoringOverview(): Promise<MonitoringOverview> {
   return {
     salud: {
       dbOk,
+      degradado,
       ultimoRollup: (rollupRes.data ?? null) as JobRunRow | null,
       ultimoMonthly: (monthlyRes.data ?? null) as JobRunRow | null,
       erroresUlt24h: err24Res.count ?? 0,

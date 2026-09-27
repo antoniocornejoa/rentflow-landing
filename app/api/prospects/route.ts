@@ -32,23 +32,28 @@ export async function POST(req: Request) {
   if (!okCaptcha) return NextResponse.json({ error: "verificación anti-spam falló" }, { status: 403 });
 
   const t = input.tracking ?? {};
-  const supabase = createAdminClient();
-  const { error } = await supabase.from("prospects").insert({
-    nombre: input.nombre,
-    email: input.email ? input.email : null,
-    telefono: input.telefono ?? null,
-    empresa: input.empresa ?? null,
-    plan_interes: input.plan_interes ? input.plan_interes : null,
-    plantilla_interes: input.plantilla_interes ? input.plantilla_interes : null,
-    mensaje: input.mensaje ?? null,
-    origen: input.origen ?? null,
-    utm_source: t.utm_source ?? null,
-    utm_medium: t.utm_medium ?? null,
-    utm_campaign: t.utm_campaign ?? null,
-    utm_term: t.utm_term ?? null,
-    utm_content: t.utm_content ?? null,
-  });
-  if (error) return NextResponse.json({ error: "no se pudo guardar" }, { status: 500 });
+  try {
+    const supabase = createAdminClient();
+    const { error } = await supabase.from("prospects").insert({
+      nombre: input.nombre,
+      email: input.email ? input.email : null,
+      telefono: input.telefono ?? null,
+      empresa: input.empresa ?? null,
+      plan_interes: input.plan_interes ? input.plan_interes : null,
+      plantilla_interes: input.plantilla_interes ? input.plantilla_interes : null,
+      mensaje: input.mensaje ?? null,
+      origen: input.origen ?? null,
+      utm_source: t.utm_source ?? null,
+      utm_medium: t.utm_medium ?? null,
+      utm_campaign: t.utm_campaign ?? null,
+      utm_term: t.utm_term ?? null,
+      utm_content: t.utm_content ?? null,
+    });
+    if (error) return NextResponse.json({ error: "no se pudo guardar" }, { status: 500 });
+  } catch {
+    // Sin Supabase configurado createAdminClient lanza: respondemos 500 controlado.
+    return NextResponse.json({ error: "no se pudo guardar" }, { status: 500 });
+  }
 
   const ops = process.env.OPERADOR_EMAIL;
   if (ops) {

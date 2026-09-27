@@ -74,37 +74,40 @@ export async function recordJob<T extends Record<string, unknown>>(
 ): Promise<T> {
   const started = Date.now();
   const startedAtIso = new Date(started).toISOString();
+  const supabase = createAdminClient();
+
+  // Fase 1: deja una fila 'running' al iniciar. Así, si Vercel mata el proceso
+  // por timeout/OOM (no corre ni el éxito ni el catch), la corrida NO queda
+  // invisible: persiste como 'running' y se puede detectar como fallo probable.
+  let runId: string | null = null;
+  try {
+    const { data } = await supabase
+      .from("job_runs")
+      .insert({ job, estado: "running", started_at: startedAtIso })
+      .select("id")
+      .single();
+    runId = data?.id ?? null;
+  } catch {
+    // Si no se pudo registrar el inicio, seguimos igual (se intentará al final).
+  }
+
+  async function cerrar(fields: { estado: "success" | "error"; detalle?: Json; error?: string }): Promise<void> {
+    const row = { ...fields, finished_at: new Date().toISOString(), duration_ms: Date.now() - started };
+    try {
+      if (runId) await supabase.from("job_runs").update(row).eq("id", runId);
+      else await supabase.from("job_runs").insert({ job, started_at: startedAtIso, ...row });
+    } catch {
+      // El registro nunca debe afectar el resultado de la tarea.
+    }
+  }
+
   try {
     const result = await fn();
-    try {
-      const supabase = createAdminClient();
-      await supabase.from("job_runs").insert({
-        job,
-        estado: "success",
-        started_at: startedAtIso,
-        finished_at: new Date().toISOString(),
-        duration_ms: Date.now() - started,
-        detalle: result as unknown as Json,
-      });
-    } catch {
-      // El registro no debe afectar el resultado de la tarea.
-    }
+    await cerrar({ estado: "success", detalle: result as unknown as Json });
     return result;
   } catch (err) {
     const mensaje = err instanceof Error ? err.message : String(err);
-    try {
-      const supabase = createAdminClient();
-      await supabase.from("job_runs").insert({
-        job,
-        estado: "error",
-        started_at: startedAtIso,
-        finished_at: new Date().toISOString(),
-        duration_ms: Date.now() - started,
-        error: mensaje,
-      });
-    } catch {
-      // idem
-    }
+    await cerrar({ estado: "error", error: mensaje });
     await logError({ origen: `job:${job}`, mensaje });
     throw err;
   }

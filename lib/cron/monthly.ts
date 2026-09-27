@@ -46,17 +46,20 @@ export async function runMonthlyReports(): Promise<{ tenants: number; enviados: 
   const periodo = prevStart.toISOString().slice(0, 10);
   const mesLabel = `${MESES_LARGO[prevStart.getUTCMonth()]} ${prevStart.getUTCFullYear()}`;
 
-  const { data: tenants } = await supabase.from("tenants").select("id, nombre_negocio").eq("estado", "activo");
+  const { data: tenants, error: tErr } = await supabase.from("tenants").select("id, nombre_negocio").eq("estado", "activo");
+  if (tErr) throw tErr;
   if (!tenants || tenants.length === 0) return { tenants: 0, enviados: 0 };
   const ids = tenants.map((t) => t.id);
 
   // Emails de los dueños (primer propietario por tenant).
-  const { data: tus } = await supabase.from("tenant_users").select("tenant_id, user_id").in("tenant_id", ids);
+  const { data: tus, error: tusErr } = await supabase.from("tenant_users").select("tenant_id, user_id").in("tenant_id", ids);
+  if (tusErr) throw tusErr;
   const userIds = Array.from(new Set((tus ?? []).map((r) => r.user_id)));
-  const { data: users } = userIds.length
+  const usersRes = userIds.length
     ? await supabase.from("users").select("id, email").in("id", userIds)
-    : { data: [] };
-  const emailByUser = new Map((users ?? []).map((u) => [u.id, u.email]));
+    : { data: [], error: null };
+  if (usersRes.error) throw usersRes.error;
+  const emailByUser = new Map((usersRes.data ?? []).map((u) => [u.id, u.email]));
   const ownerEmailByTenant = new Map<string, string>();
   for (const r of tus ?? []) {
     const email = emailByUser.get(r.user_id);
@@ -64,20 +67,22 @@ export async function runMonthlyReports(): Promise<{ tenants: number; enviados: 
   }
 
   // Leads de los 2 meses (para comparativa).
-  const { data: leads } = await supabase
+  const { data: leads, error: leadsErr } = await supabase
     .from("leads")
     .select("tenant_id, origen, created_at")
     .in("tenant_id", ids)
     .gte("created_at", prev2Start.toISOString())
     .lt("created_at", prevEnd.toISOString());
+  if (leadsErr) throw leadsErr;
 
   // Visitas de los 2 meses (rollup).
-  const { data: daily } = await supabase
+  const { data: daily, error: dailyErr } = await supabase
     .from("page_view_daily")
     .select("tenant_id, fecha, visitas, por_path")
     .in("tenant_id", ids)
     .gte("fecha", prev2Start.toISOString().slice(0, 10))
     .lt("fecha", prevEnd.toISOString().slice(0, 10));
+  if (dailyErr) throw dailyErr;
 
   const enPrev = (iso: string) => new Date(iso) >= prevStart && new Date(iso) < prevEnd;
 
@@ -120,7 +125,7 @@ export async function runMonthlyReports(): Promise<{ tenants: number; enviados: 
       if (res.sent) enviados++;
     }
 
-    await supabase.from("monthly_reports").upsert(
+    const { error: repErr } = await supabase.from("monthly_reports").upsert(
       {
         tenant_id: t.id,
         periodo,
@@ -134,6 +139,7 @@ export async function runMonthlyReports(): Promise<{ tenants: number; enviados: 
       },
       { onConflict: "tenant_id,periodo" },
     );
+    if (repErr) throw repErr;
   }
 
   return { tenants: tenants.length, enviados };

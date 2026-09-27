@@ -6,7 +6,7 @@ import { ProspectForm } from "@/components/marketing/prospect-form";
 import { PhoneMock, BrowserMock } from "@/components/marketing/mocks";
 import {
   CheckCircle, Bolt, Clock, Search, Chat, Shield, Wallet, Unlock, Layers,
-  ArrowRight, Chevron, Whatsapp, Stars,
+  ArrowRight, Chevron, Whatsapp,
 } from "@/components/marketing/icons";
 
 export const metadata: Metadata = {
@@ -35,9 +35,9 @@ const TRUST = [
 ];
 
 const RESULTS = [
-  { big: "3x", t: "más consultas que solo tener Facebook" },
-  { big: "<1,5s", t: "en cargar, o la gente se va" },
-  { big: "24/7", t: "recibiendo contactos, incluso cuando duermes" },
+  { big: "24/7", t: "tu negocio disponible, aunque estés cerrado o durmiendo" },
+  { big: "<1,5s", t: "en cargar en el celular, para que nadie se vaya esperando" },
+  { big: "100%", t: "tuyo: tu marca, tu dominio y tu contenido" },
 ];
 
 const DEMOS = [
@@ -60,12 +60,6 @@ const BENEFITS = [
   { icon: Shield, t: "Siempre al día y segura", d: "La mantenemos actualizada, con respaldos. Tú no te preocupas de nada." },
   { icon: Bolt, t: "Rápida y sale en Google", d: "Carga en menos de 1,5s y está optimizada para que te encuentren." },
   { icon: Unlock, t: "Sin amarras", d: "Sin permanencia. La das de baja cuando quieras." },
-];
-
-const TESTIMONIALS = [
-  { ini: "MR", nom: "M. Rojas", rubro: "Taller mecánico, Talca", txt: "Desde que tengo la página me escriben por WhatsApp casi todos los días." },
-  { ini: "CF", nom: "C. Fuentes", rubro: "Café, Talca", txt: "Antes perdía los mensajes; ahora todo me llega ordenado." },
-  { ini: "PD", nom: "P. Díaz", rubro: "Inmobiliaria, Talca", txt: "La corredora recibe contactos ya filtrados." },
 ];
 
 const FAQ = [
@@ -148,13 +142,9 @@ export default async function MarketingHome() {
                   <PhoneMock plantilla={r.plantilla} />
                 </div>
               ))}
-              <div className="anim-float absolute -right-3 top-10 max-w-[190px] rounded-2xl border border-[var(--border)] bg-[var(--background)] px-3 py-2 shadow-lg">
-                <p className="text-[11px] font-semibold text-[var(--foreground)]">Nuevo contacto</p>
-                <p className="text-[11px] text-[var(--muted)]">Juan quiere cotizar</p>
-              </div>
-              <div className="absolute -left-3 bottom-8 rounded-2xl border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-center shadow-lg">
-                <p className="text-lg font-extrabold tabular-nums text-[var(--brand)]">+38</p>
-                <p className="text-[10px] text-[var(--muted)]">contactos este mes</p>
+              <div className="anim-float absolute -right-3 top-10 max-w-[200px] rounded-2xl border border-[var(--border)] bg-[var(--background)] px-3 py-2 shadow-lg">
+                <p className="text-[11px] font-semibold text-[var(--foreground)]">Botón de WhatsApp</p>
+                <p className="text-[11px] text-[var(--muted)]">Cada visita te escribe directo</p>
               </div>
             </div>
           </div>
@@ -174,7 +164,7 @@ export default async function MarketingHome() {
       </section>
 
       {/* Resultados */}
-      <Section id="resultados" eyebrow="Resultados" titulo="Lo que importa es que te contacten">
+      <Section id="resultados" eyebrow="La página" titulo="Pensada para que te escriban">
         <div className="grid gap-5 sm:grid-cols-3">
           {RESULTS.map((r, i) => (
             <div key={i} className="reveal rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-8 text-center shadow-sm">
@@ -183,9 +173,6 @@ export default async function MarketingHome() {
             </div>
           ))}
         </div>
-        <p className="mt-4 text-center text-xs text-[var(--muted)]">
-          Cifras estimadas según buenas prácticas de landing pages; tus resultados dependen de tu rubro y difusión.
-        </p>
       </Section>
 
       {/* Vitrina de plantillas */}
@@ -275,19 +262,21 @@ export default async function MarketingHome() {
         <p className="mt-6 text-center text-sm text-[var(--muted)]">Cambias de plan cuando lo necesites.</p>
       </Section>
 
-      {/* Testimonios */}
-      <Section eyebrow="Testimonios ilustrativos" titulo="Dueños como tú">
-        <div className="grid gap-5 sm:grid-cols-3">
-          {TESTIMONIALS.map((t, i) => (
-            <figure key={i} className="reveal flex flex-col gap-3 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6">
-              <Stars n={5} />
-              <blockquote className="text-pretty text-slate-700 dark:text-slate-200">“{t.txt}”</blockquote>
-              <figcaption className="mt-auto flex items-center gap-3">
-                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-[#0f766e] to-[#10b981] text-sm font-bold text-white">{t.ini}</span>
-                <span className="text-sm"><span className="font-medium">{t.nom}</span><br /><span className="text-[var(--muted)]">{t.rubro}</span></span>
-              </figcaption>
-            </figure>
-          ))}
+      {/* Recién partimos — honesto, sin testimonios inventados */}
+      <Section eyebrow="Recién partimos" titulo="Sé de los primeros de Talca en tenerla" sub="Somos nuevos, y por eso cuidamos cada página como si fuera la nuestra.">
+        <div className="mx-auto grid max-w-3xl gap-5 sm:grid-cols-3">
+          <div className="reveal rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 text-center">
+            <Chat width={26} height={26} className="mx-auto text-[var(--brand)]" />
+            <p className="mt-3 text-sm text-[var(--muted)]">Trato directo con quien hace tu página. Sin call center ni intermediarios.</p>
+          </div>
+          <div className="reveal rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 text-center">
+            <Layers width={26} height={26} className="mx-auto text-[var(--brand)]" />
+            <p className="mt-3 text-sm text-[var(--muted)]">Hecha en Talca, pensada para negocios de Talca.</p>
+          </div>
+          <div className="reveal rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 text-center">
+            <Unlock width={26} height={26} className="mx-auto text-[var(--brand)]" />
+            <p className="mt-3 text-sm text-[var(--muted)]">Sin permanencia y sin costo de entrada. Pruébala sin riesgo.</p>
+          </div>
         </div>
       </Section>
 
@@ -295,8 +284,8 @@ export default async function MarketingHome() {
       <section className="px-4 py-16">
         <div className="mx-auto max-w-4xl rounded-3xl bg-gradient-to-br from-[#0f766e] to-[#10b981] p-10 text-center text-white">
           <h2 className="font-display text-3xl font-extrabold">Sin permanencia. Si no te sirve, la das de baja.</h2>
-          <p className="mx-auto mt-3 max-w-xl text-white/90">Tomamos pocos negocios nuevos por semana para cuidar la calidad. Aún hay cupos este mes.</p>
-          <a href="#contacto" className="mt-6 inline-flex rounded-full bg-white px-6 py-3 font-semibold text-[var(--brand)]">Reservar mi cupo</a>
+          <p className="mx-auto mt-3 max-w-xl text-white/90">Partes sin costo de instalación y sin permanencia. Coordinamos todo por WhatsApp y la dejamos lista en pocos días.</p>
+          <a href="#contacto" className="mt-6 inline-flex rounded-full bg-white px-6 py-3 font-semibold text-[var(--brand)]">Quiero mi página</a>
         </div>
       </section>
 

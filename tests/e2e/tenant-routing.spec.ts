@@ -19,7 +19,7 @@ test("health responde ok", async ({ request }) => {
 test("host raíz -> sitio comercial", async ({ request }) => {
   const res = await request.get(`${base}/`, { headers: { host: `localhost:${PORT}` } });
   expect(res.status()).toBe(200);
-  expect(await res.text()).toContain("capta clientes");
+  expect(await res.text()).toContain("suene el teléfono");
 });
 
 test("app.{root} sin sesión -> redirige al login", async ({ request }) => {

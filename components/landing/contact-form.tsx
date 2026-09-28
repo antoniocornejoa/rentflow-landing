@@ -37,6 +37,9 @@ export function ContactForm({
   const [enviado, setEnviado] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  // El widget anti-spam (script de terceros) sólo se monta al interactuar con el
+  // formulario: no penaliza la carga inicial del sitio del cliente.
+  const [engaged, setEngaged] = useState(false);
 
   async function onSubmit(values: Valores) {
     setError(null);
@@ -93,7 +96,13 @@ export function ContactForm({
     "w-full rounded-xl border border-black/10 bg-white px-4 py-3 text-base text-slate-900 outline-none focus:border-[var(--brand)]";
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4" noValidate>
+    <form
+      onSubmit={handleSubmit(onSubmit)}
+      onFocusCapture={() => setEngaged(true)}
+      onPointerDown={() => setEngaged(true)}
+      className="flex flex-col gap-4"
+      noValidate
+    >
       {/* Honeypot anti-spam (oculto para humanos). */}
       <input
         type="text"
@@ -153,7 +162,7 @@ export function ContactForm({
         </label>
       ) : null}
 
-      <TurnstileWidget onToken={setTurnstileToken} />
+      {engaged ? <TurnstileWidget onToken={setTurnstileToken} /> : null}
 
       {error ? <p className="text-sm text-red-500">{error}</p> : null}
 

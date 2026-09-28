@@ -11,6 +11,14 @@ import { PageviewBeacon } from "@/components/landing/pageview-beacon";
 // ISR: se regenera cada hora y se invalida on-demand por tag al editar/suspender.
 export const revalidate = 3600;
 
+// Sin `generateStaticParams` un segmento dinámico se sirve on-demand (ƒ) y el
+// `revalidate` de arriba NO llega a aplicarse: la ruta nunca se cachea como ISR.
+// Devolver [] la deja en modo ISR (dynamicParams=true por defecto): cada host se
+// genera en la 1ª visita y se sirve como HTML estático desde el edge más cercano.
+export function generateStaticParams(): { domain: string }[] {
+  return [];
+}
+
 interface PageProps {
   params: Promise<{ domain: string }>;
 }

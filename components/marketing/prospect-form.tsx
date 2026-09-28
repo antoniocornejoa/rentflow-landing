@@ -14,6 +14,9 @@ export function ProspectForm() {
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  // El widget anti-spam (script de terceros) sólo se monta cuando el visitante
+  // interactúa con el formulario: no penaliza la carga inicial de quien no lo usa.
+  const [engaged, setEngaged] = useState(false);
 
   async function onSubmit(values: Valores) {
     setError(null);
@@ -52,7 +55,13 @@ export function ProspectForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-3" noValidate>
+    <form
+      onSubmit={handleSubmit(onSubmit)}
+      onFocusCapture={() => setEngaged(true)}
+      onPointerDown={() => setEngaged(true)}
+      className="flex flex-col gap-3"
+      noValidate
+    >
       <input type="text" tabIndex={-1} aria-hidden className="absolute left-[-9999px]" {...register("hp")} />
       <div className="grid gap-3 sm:grid-cols-2">
         <input placeholder="Nombre" required className={field} {...register("nombre", { required: true })} />
@@ -74,7 +83,7 @@ export function ProspectForm() {
         </select>
       </div>
       <textarea placeholder="Cuéntanos de tu negocio (opcional)" rows={3} className={field} {...register("mensaje")} />
-      <TurnstileWidget onToken={setTurnstileToken} />
+      {engaged ? <TurnstileWidget onToken={setTurnstileToken} /> : null}
       {error ? <p className="text-sm text-red-500">{error}</p> : null}
       <button
         type="submit"

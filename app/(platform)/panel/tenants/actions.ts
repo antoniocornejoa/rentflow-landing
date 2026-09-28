@@ -6,7 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdmin } from "@/lib/auth";
 import { logAudit } from "@/lib/monitoring";
 import { ROOT_DOMAIN } from "@/lib/env";
-import { revalidateTenant } from "@/lib/tenant/revalidate";
+import { revalidateTenant, revalidateTenantHost } from "@/lib/tenant/revalidate";
 import { schemaPorPlantilla, type Plantilla } from "@/lib/content/schema";
 import type { Json } from "@/lib/supabase/database.types";
 
@@ -86,12 +86,15 @@ export async function createTenant(_prev: AltaState, formData: FormData): Promis
   });
 
   // 4) Dominio propio (subdominio bajo el wildcard, ya servible = verificado)
+  const hostname = `${input.slug}.${ROOT_DOMAIN}`.toLowerCase();
   await supabase.from("tenant_domains").insert({
     tenant_id: tenantId,
-    hostname: `${input.slug}.${ROOT_DOMAIN}`.toLowerCase(),
+    hostname,
     is_primary: true,
     verificado: true,
   });
+  // Refresca la resolución host->tenant por si el host quedó en 404 cacheado.
+  revalidateTenantHost(hostname);
 
   // 5) Dueño: crea (o reutiliza) el usuario y lo asocia al tenant.
   let ownerId: string | null = null;

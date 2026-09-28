@@ -47,17 +47,6 @@ body {
   letter-spacing: -0.02em;
 }
 
-/* Selector de rubro del hero: 100% CSS (:has), sin JS. */
-.rubro [data-panel] {
-  display: none;
-}
-.rubro:has(#r-serv:checked) [data-panel="serv"],
-.rubro:has(#r-gastro:checked) [data-panel="gastro"],
-.rubro:has(#r-inmo:checked) [data-panel="inmo"],
-.rubro:has(#r-retail:checked) [data-panel="retail"] {
-  display: block;
-}
-
 /* Chevron del FAQ (details/summary) sin JS. */
 details > summary {
   list-style: none;
@@ -72,13 +61,6 @@ details[open] .faq-chevron {
 
 /* Micro-interacciones solo si el usuario no pidió reduir movimiento. */
 @media (prefers-reduced-motion: no-preference) {
-  @keyframes float {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-8px); }
-  }
-  .anim-float {
-    animation: float 3.5s ease-in-out infinite;
-  }
   @keyframes reveal {
     from { opacity: 0; transform: translateY(18px); }
     to { opacity: 1; transform: none; }

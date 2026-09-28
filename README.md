@@ -27,8 +27,8 @@ cero deploy por cliente.
   la hacen las acciones/crons con `service_role`; la lectura es sólo admin (RLS).
 - **Reportes automáticos** (Vercel Cron): rollup diario de analítica y reporte
   mensual por correo el día 1. Cada corrida queda registrada en `job_runs`.
-- **Sitio comercial** (`midominio.cl`): planes, demos por rubro y captación de
-  prospectos (sin datos inventados).
+- **Sitio comercial** (`midominio.cl`): planes y captación de prospectos
+  (sin ejemplos ni datos inventados).
 
 ---
 

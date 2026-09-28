@@ -28,7 +28,7 @@ export async function GET() {
   if (kind === "platform") return xml([]);
 
   if (kind === "marketing") {
-    return xml([`${base}/`, `${base}/demo`]);
+    return xml([`${base}/`]);
   }
 
   const tenant = await getTenantByHost(host);

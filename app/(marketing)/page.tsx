@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { getPlanes } from "@/lib/marketing/planes";
 import { formatCLP } from "@/lib/format";
 import { ProspectForm } from "@/components/marketing/prospect-form";
-import { PhoneMock, BrowserMock } from "@/components/marketing/mocks";
 import {
   CheckCircle, Bolt, Clock, Search, Chat, Shield, Wallet, Unlock, Layers,
   ArrowRight, Chevron, Whatsapp,
@@ -20,13 +18,6 @@ const CTA_PRIMARY =
 const CTA_OUTLINE =
   "inline-flex items-center justify-center gap-2 rounded-full border border-[var(--brand)] px-6 py-3 text-base font-semibold text-[var(--brand)] transition-colors hover:bg-[var(--brand)]/5";
 
-const RUBROS = [
-  { id: "r-serv", panel: "serv", plantilla: "servicios" as const, label: "Taller", checked: true },
-  { id: "r-gastro", panel: "gastro", plantilla: "gastronomia" as const, label: "Café", checked: false },
-  { id: "r-inmo", panel: "inmo", plantilla: "inmobiliaria" as const, label: "Inmobiliaria", checked: false },
-  { id: "r-retail", panel: "retail", plantilla: "retail" as const, label: "Tienda", checked: false },
-];
-
 const TRUST = [
   { icon: Clock, t: "Lista en 3–5 días" },
   { icon: Bolt, t: "Carga en menos de 1,5s" },
@@ -39,13 +30,6 @@ const RESULTS = [
   { big: "<1,5s", t: "en cargar en el celular, para que nadie se vaya esperando" },
   { big: "100%", t: "tuyo: tu marca, tu dominio y tu contenido" },
 ];
-
-const DEMOS = [
-  { slug: "servicios", t: "Servicios / Taller", d: "Agenda de mantenciones y frenos que llega directo a tu WhatsApp." },
-  { slug: "gastronomia", t: "Gastronomía", d: "Carta, horarios y pedidos, siempre al día." },
-  { slug: "inmobiliaria", t: "Inmobiliaria", d: "Tipologías y contactos calificados a la corredora." },
-  { slug: "retail", t: "Tienda", d: "Catálogo con consulta por WhatsApp, sin comisiones de marketplace." },
-] as const;
 
 const STEPS = [
   { n: 1, icon: Chat, dia: "Día 1", t: "Nos cuentas de tu negocio", d: "Por WhatsApp, en 10 minutos. No necesitas tener nada listo." },
@@ -102,52 +86,22 @@ export default async function MarketingHome() {
       {/* Hero */}
       <section className="relative overflow-hidden">
         <div className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-br from-[#0f766e]/10 via-transparent to-[#10b981]/10" />
-        <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 py-16 sm:py-24 lg:grid-cols-2">
-          <div className="flex flex-col gap-6">
-            <span className="w-fit rounded-full border border-[var(--border)] bg-[var(--surface)] px-3 py-1 text-xs font-medium text-[var(--muted)]">
-              Landing pages en arriendo · Talca, Chile
-            </span>
-            <h1 className="font-display text-5xl font-extrabold leading-[1.05] tracking-tight text-balance sm:text-6xl">
-              Que tu negocio <span className="bg-gradient-to-br from-[#0f766e] to-[#10b981] bg-clip-text text-transparent">suene el teléfono</span> este mes
-            </h1>
-            <p className="max-w-xl text-pretty text-lg text-[var(--muted)]">
-              Te armamos una página profesional que convierte visitas en contactos por WhatsApp. Sin pagar
-              desarrollo: un plan mensual con todo incluido y lista en pocos días. Elige tu rubro y mira cómo
-              se vería la tuya.
-            </p>
-            <div className="flex flex-wrap gap-3">
-              <a href="#contacto" className={CTA_PRIMARY}>Quiero recibir más contactos <ArrowRight width={18} height={18} /></a>
-              <a href="#demos" className={CTA_OUTLINE}>Ver un ejemplo real</a>
-            </div>
-            <p className="text-sm text-[var(--muted)]">Sin tarjeta · Coordinamos por WhatsApp · Sin permanencia</p>
+        <div className="mx-auto flex max-w-3xl flex-col items-center gap-6 px-4 py-20 text-center sm:py-28">
+          <span className="rounded-full border border-[var(--border)] bg-[var(--surface)] px-3 py-1 text-xs font-medium text-[var(--muted)]">
+            Landing pages en arriendo · Talca, Chile
+          </span>
+          <h1 className="font-display text-5xl font-extrabold leading-[1.05] tracking-tight text-balance sm:text-6xl">
+            Que tu negocio <span className="bg-gradient-to-br from-[#0f766e] to-[#10b981] bg-clip-text text-transparent">suene el teléfono</span> este mes
+          </h1>
+          <p className="max-w-xl text-pretty text-lg text-[var(--muted)]">
+            Te armamos una página profesional que convierte visitas en contactos por WhatsApp. Sin pagar
+            desarrollo: un plan mensual con todo incluido y lista en pocos días.
+          </p>
+          <div className="flex flex-wrap justify-center gap-3">
+            <a href="#contacto" className={CTA_PRIMARY}>Quiero recibir más contactos <ArrowRight width={18} height={18} /></a>
+            <a href="#planes" className={CTA_OUTLINE}>Ver planes</a>
           </div>
-
-          {/* Selector de rubro en vivo (CSS puro) */}
-          <div className="rubro" aria-label="Elige tu rubro">
-            <div className="flex flex-wrap justify-center gap-2">
-              {RUBROS.map((r) => (
-                <label
-                  key={r.id}
-                  className="cursor-pointer rounded-full border border-[var(--border)] bg-[var(--surface)] px-4 py-2 text-sm font-medium transition-colors has-[:checked]:border-transparent has-[:checked]:bg-gradient-to-br has-[:checked]:from-[#0f766e] has-[:checked]:to-[#10b981] has-[:checked]:text-white"
-                >
-                  <input id={r.id} type="radio" name="rubro" defaultChecked={r.checked} className="sr-only" />
-                  {r.label}
-                </label>
-              ))}
-            </div>
-
-            <div className="relative mx-auto mt-8 w-fit">
-              {RUBROS.map((r) => (
-                <div key={r.panel} data-panel={r.panel}>
-                  <PhoneMock plantilla={r.plantilla} />
-                </div>
-              ))}
-              <div className="anim-float absolute -right-3 top-10 max-w-[200px] rounded-2xl border border-[var(--border)] bg-[var(--background)] px-3 py-2 shadow-lg">
-                <p className="text-[11px] font-semibold text-[var(--foreground)]">Botón de WhatsApp</p>
-                <p className="text-[11px] text-[var(--muted)]">Cada visita te escribe directo</p>
-              </div>
-            </div>
-          </div>
+          <p className="text-sm text-[var(--muted)]">Sin tarjeta · Coordinamos por WhatsApp · Sin permanencia</p>
         </div>
       </section>
 
@@ -173,25 +127,6 @@ export default async function MarketingHome() {
             </div>
           ))}
         </div>
-      </Section>
-
-      {/* Vitrina de plantillas */}
-      <Section id="demos" eyebrow="Ejemplos por rubro" titulo="Mira cómo se vería la tuya" sub="Elige el punto de partida. Después la hacemos tuya.">
-        <div className="grid gap-6 sm:grid-cols-2">
-          {DEMOS.map((d) => (
-            <Link key={d.slug} href={`/demo/${d.slug}`} className="reveal group rounded-3xl border border-[var(--border)] bg-[var(--background)] p-5 transition-all hover:-translate-y-1 hover:border-[var(--brand)] hover:shadow-lg">
-              <BrowserMock plantilla={d.slug} />
-              <div className="mt-4 flex items-start justify-between gap-3">
-                <div>
-                  <h3 className="font-semibold">{d.t}</h3>
-                  <p className="mt-1 text-sm text-[var(--muted)]">{d.d}</p>
-                </div>
-                <span className="mt-1 shrink-0 text-sm font-medium text-[var(--brand)] opacity-0 transition-opacity group-hover:opacity-100">Ver demo →</span>
-              </div>
-            </Link>
-          ))}
-        </div>
-        <p className="mt-4 text-center text-sm text-[var(--muted)]">Personalizamos colores, textos y fotos con lo tuyo. Esto es solo un ejemplo.</p>
       </Section>
 
       {/* Cómo funciona */}

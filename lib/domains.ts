@@ -25,12 +25,17 @@ export function normalizeHost(rawHost: string | null | undefined): string {
 export function classifyHost(
   rawHost: string | null | undefined,
   rootDomain: string,
+  platformHost?: string | null,
 ): HostClassification {
   const host = normalizeHost(rawHost);
   const root = normalizeHost(rootDomain);
+  const plat = normalizeHost(platformHost);
 
   // Host ausente/vacío -> degradar al sitio comercial (evita /sites/ malformado).
   if (host === "") return { kind: "marketing", host };
+  // Host de plataforma explícito (p.ej. una dirección de prueba en *.vercel.app,
+  // donde no se puede usar el subdominio app.{root}).
+  if (plat && host === plat) return { kind: "platform", host };
   if (host === root || host === `www.${root}`) return { kind: "marketing", host };
   if (host === `app.${root}`) return { kind: "platform", host };
   return { kind: "tenant", host };

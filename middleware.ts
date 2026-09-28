@@ -3,6 +3,9 @@ import { classifyHost } from "@/lib/domains";
 import { rewriteWithSession } from "@/lib/supabase/middleware-session";
 
 const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? "localhost:3000";
+// Host de plataforma explícito (opcional). Útil para dar al panel una dirección
+// de prueba en *.vercel.app, donde no existe el subdominio app.{root}.
+const PLATFORM_HOST = process.env.NEXT_PUBLIC_PLATFORM_HOST ?? null;
 
 /**
  * Ruteo multi-tenant por host. NO toca la base de datos (rápido en el edge):
@@ -31,7 +34,7 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
     return new NextResponse("Not found", { status: 404 });
   }
 
-  const { kind, host } = classifyHost(req.headers.get("host"), ROOT_DOMAIN);
+  const { kind, host } = classifyHost(req.headers.get("host"), ROOT_DOMAIN, PLATFORM_HOST);
 
   // Sin Supabase configurado no hay tenants: servir el sitio comercial + demos
   // para cualquier host (evita errores antes de conectar la base de datos).

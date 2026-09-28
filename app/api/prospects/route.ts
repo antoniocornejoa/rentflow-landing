@@ -57,7 +57,9 @@ export async function POST(req: Request) {
 
   const ops = process.env.OPERADOR_EMAIL;
   if (ops) {
-    void sendEmail({
+    // Esperamos el envío (en serverless un fire-and-forget puede cortarse al responder).
+    // Nunca rompe el flujo: sendEmail captura y registra sus propios errores.
+    await sendEmail({
       to: ops,
       replyTo: input.email || undefined,
       subject: `Nuevo prospecto: ${input.nombre}`,
@@ -67,6 +69,8 @@ export async function POST(req: Request) {
         <p><strong>Plan:</strong> ${input.plan_interes || "—"} · <strong>Plantilla:</strong> ${input.plantilla_interes || "—"}</p>
         ${input.mensaje ? `<p>${escapeHtml(input.mensaje)}</p>` : ""}</div>`,
     });
+  } else {
+    console.error("[prospects] OPERADOR_EMAIL no configurada: prospecto guardado, pero sin aviso por correo.");
   }
 
   return NextResponse.json({ ok: true });

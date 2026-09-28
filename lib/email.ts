@@ -23,13 +23,20 @@ export interface EmailParams {
  */
 export async function sendEmail({ to, subject, html, replyTo }: EmailParams): Promise<{ sent: boolean; id?: string }> {
   const resend = getResend();
-  if (!resend) return { sent: false };
+  if (!resend) {
+    console.error("[email] RESEND_API_KEY no configurada: no se envió el correo.");
+    return { sent: false };
+  }
   const from = process.env.RESEND_FROM ?? "RentFlow <onboarding@resend.dev>";
   try {
     const { data, error } = await resend.emails.send({ from, to, subject, html, replyTo });
-    if (error) return { sent: false };
+    if (error) {
+      console.error("[email] Resend rechazó el envío:", error.message ?? error);
+      return { sent: false };
+    }
     return { sent: true, id: data?.id };
-  } catch {
+  } catch (e) {
+    console.error("[email] Error inesperado al enviar:", e instanceof Error ? e.message : e);
     return { sent: false };
   }
 }

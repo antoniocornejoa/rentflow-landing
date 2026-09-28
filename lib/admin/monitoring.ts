@@ -38,6 +38,18 @@ export interface Alerta {
   detalle: string;
 }
 
+/** Estado de la configuración de notificaciones por correo (sólo presencia, nunca el valor de la API key). */
+export interface NotifConfig {
+  /** RESEND_API_KEY presente en el entorno. */
+  resendKey: boolean;
+  /** Dirección a la que llegan los avisos (OPERADOR_EMAIL). Es tu propio correo; seguro de mostrar. */
+  operadorEmail: string | null;
+  /** RESEND_FROM configurado (remitente propio con dominio verificado). Si es falso se usa el remitente de prueba. */
+  remitentePropio: boolean;
+  /** Todo lo mínimo está: se puede enviar el aviso. */
+  listo: boolean;
+}
+
 export interface MonitoringOverview {
   salud: {
     dbOk: boolean;
@@ -47,6 +59,7 @@ export interface MonitoringOverview {
     erroresUlt24h: number;
     jobsFallidos7d: number;
   };
+  config: NotifConfig;
   jobs: JobRunRow[];
   auditoria: AuditRow[];
   errores: ErrorRow[];
@@ -130,6 +143,13 @@ export async function getMonitoringOverview(): Promise<MonitoringOverview> {
   if (activosSinLeads.length)
     alertas.push({ tipo: "sin_leads", severidad: "baja", titulo: `${activosSinLeads.length} activo(s) sin contactos en 30 días`, detalle: activosSinLeads.map((t) => t.nombre_negocio).join(", ") });
 
+  const config: NotifConfig = {
+    resendKey: Boolean(process.env.RESEND_API_KEY),
+    operadorEmail: process.env.OPERADOR_EMAIL ?? null,
+    remitentePropio: Boolean(process.env.RESEND_FROM),
+    listo: Boolean(process.env.RESEND_API_KEY && process.env.OPERADOR_EMAIL),
+  };
+
   return {
     salud: {
       dbOk,
@@ -139,6 +159,7 @@ export async function getMonitoringOverview(): Promise<MonitoringOverview> {
       erroresUlt24h: err24Res.count ?? 0,
       jobsFallidos7d: jobsFail7Res.count ?? 0,
     },
+    config,
     jobs,
     auditoria,
     errores,

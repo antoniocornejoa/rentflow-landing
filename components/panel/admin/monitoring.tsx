@@ -88,6 +88,50 @@ export async function MonitoringView() {
         />
       </div>
 
+      {/* Notificaciones por correo */}
+      <Card title="Avisos por correo de nuevos prospectos">
+        {data.config.listo ? (
+          <div className="px-5 py-4 text-sm">
+            <p className="flex items-center gap-2 font-medium text-emerald-700">
+              <span>✓</span> Configurado. Cada nuevo prospecto te llega a{" "}
+              <span className="font-semibold">{data.config.operadorEmail}</span>.
+            </p>
+            {!data.config.remitentePropio ? (
+              <p className="mt-2 text-xs text-[var(--muted)]">
+                Estás usando el remitente de prueba de Resend. En ese modo el correo{" "}
+                <strong>sólo llega a la dirección con la que creaste la cuenta de Resend</strong>. Si no lo ves, revisa
+                que <span className="font-medium">{data.config.operadorEmail}</span> sea esa misma dirección y mira la
+                carpeta de spam/promociones.
+              </p>
+            ) : (
+              <p className="mt-2 text-xs text-[var(--muted)]">Remitente propio con dominio verificado. ✓</p>
+            )}
+          </div>
+        ) : (
+          <div className="px-5 py-4 text-sm">
+            <p className="flex items-center gap-2 font-medium text-amber-700">
+              <span>⚠️</span> Aún no está listo. Los prospectos se guardan siempre en la pestaña “Prospectos”, pero el
+              aviso por correo no se enviará hasta completar esto:
+            </p>
+            <ul className="mt-3 space-y-1.5 text-sm">
+              <li className="flex items-center gap-2">
+                <span>{data.config.resendKey ? "✓" : "✗"}</span>
+                <span className={data.config.resendKey ? "" : "text-[var(--muted)]"}>
+                  Clave de Resend (RESEND_API_KEY) {data.config.resendKey ? "configurada" : "falta"}
+                </span>
+              </li>
+              <li className="flex items-center gap-2">
+                <span>{data.config.operadorEmail ? "✓" : "✗"}</span>
+                <span className={data.config.operadorEmail ? "" : "text-[var(--muted)]"}>
+                  Correo de destino (OPERADOR_EMAIL){" "}
+                  {data.config.operadorEmail ? `= ${data.config.operadorEmail}` : "falta"}
+                </span>
+              </li>
+            </ul>
+          </div>
+        )}
+      </Card>
+
       {/* Alertas de negocio */}
       <Card title="Alertas de negocio">
         {data.alertas.length === 0 ? (

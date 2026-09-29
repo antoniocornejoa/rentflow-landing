@@ -1,5 +1,6 @@
 import { getMarketingOverview } from "@/lib/admin/marketing";
 import { Kpi } from "@/components/panel/kpi";
+import { SimpleBarChart } from "@/components/panel/bar-chart";
 import { SpendForm } from "@/components/panel/admin/spend-form";
 import { deleteSpend } from "@/app/(platform)/panel/publicidad/actions";
 import { CANAL_LABEL } from "@/lib/marketing/canales";
@@ -33,6 +34,16 @@ export async function MarketingView() {
           hint="gasto ÷ prospectos del mes"
         />
       </div>
+
+      {data.porMes.some((m) => m.monto > 0) ? (
+        <section className="rounded-2xl border border-black/10 bg-[var(--bg)] p-5">
+          <div className="mb-2 flex items-baseline justify-between">
+            <h2 className="text-sm font-semibold text-[var(--muted)]">Gasto mes a mes</h2>
+            <span className="text-xs text-[var(--muted)]">Últimos 6 meses · CLP</span>
+          </div>
+          <SimpleBarChart data={data.porMes} xKey="mes" yKey="monto" />
+        </section>
+      ) : null}
 
       {data.porCanal.length > 0 ? (
         <section className="rounded-2xl border border-black/10 bg-[var(--bg)] p-5">

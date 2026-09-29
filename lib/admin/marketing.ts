@@ -1,5 +1,6 @@
 import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { ultimos6Meses } from "@/lib/dates";
 
 export interface SpendRow {
   id: string;
@@ -18,6 +19,8 @@ export interface MarketingOverview {
   /** Gasto del mes ÷ prospectos del mes (CAC aproximado, mezcla orgánico + pauta). */
   costoPorProspecto: number | null;
   porCanal: { canal: string; monto: number }[];
+  /** Serie de gasto de los últimos 6 meses (para el gráfico de tendencia). */
+  porMes: { mes: string; monto: number }[];
   entries: SpendRow[];
 }
 
@@ -63,12 +66,22 @@ export async function getMarketingOverview(): Promise<MarketingOverview> {
     .map(([c, monto]) => ({ canal: c, monto }))
     .sort((a, b) => b.monto - a.monto);
 
+  // Serie mensual (últimos 6 meses), rellenando con 0 los meses sin gasto.
+  const meses = ultimos6Meses();
+  const serie = new Map(meses.map((m) => [m.clave, 0]));
+  for (const e of entries) {
+    const k = e.fecha.slice(0, 7);
+    if (serie.has(k)) serie.set(k, (serie.get(k) ?? 0) + e.monto);
+  }
+  const porMes = meses.map((m) => ({ mes: m.etiqueta, monto: serie.get(m.clave) ?? 0 }));
+
   return {
     totalMes,
     totalHistorico,
     prospectosMes,
     costoPorProspecto: prospectosMes > 0 ? Math.round(totalMes / prospectosMes) : null,
     porCanal,
+    porMes,
     entries,
   };
 }

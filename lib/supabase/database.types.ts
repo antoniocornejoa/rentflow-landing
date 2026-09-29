@@ -27,6 +27,7 @@ type Enums = {
   change_request_estado: "pendiente" | "en_proceso" | "completado" | "rechazado";
   prioridad: "baja" | "media" | "alta";
   prospect_estado: "nuevo" | "contactado" | "propuesta" | "convertido" | "descartado";
+  prospect_activity_tipo: "nota" | "llamada" | "whatsapp" | "email" | "reunion" | "propuesta" | "cambio_estado";
   job_estado: "running" | "success" | "error";
 };
 
@@ -124,9 +125,15 @@ export type Database = {
         Relationships: [];
       };
       prospects: {
-        Row: { id: string; nombre: string; email: string | null; telefono: string | null; empresa: string | null; plan_interes: Enums["plan_tipo"] | null; plantilla_interes: Enums["plantilla_tipo"] | null; mensaje: string | null; origen: string | null; utm_source: string | null; utm_medium: string | null; utm_campaign: string | null; utm_term: string | null; utm_content: string | null; estado: Enums["prospect_estado"]; convertido_tenant_id: string | null; created_at: string; updated_at: string };
-        Insert: { id?: string; nombre: string; email?: string | null; telefono?: string | null; empresa?: string | null; plan_interes?: Enums["plan_tipo"] | null; plantilla_interes?: Enums["plantilla_tipo"] | null; mensaje?: string | null; origen?: string | null; utm_source?: string | null; utm_medium?: string | null; utm_campaign?: string | null; utm_term?: string | null; utm_content?: string | null; estado?: Enums["prospect_estado"]; convertido_tenant_id?: string | null; created_at?: string; updated_at?: string };
+        Row: { id: string; nombre: string; email: string | null; telefono: string | null; empresa: string | null; plan_interes: Enums["plan_tipo"] | null; plantilla_interes: Enums["plantilla_tipo"] | null; mensaje: string | null; origen: string | null; utm_source: string | null; utm_medium: string | null; utm_campaign: string | null; utm_term: string | null; utm_content: string | null; estado: Enums["prospect_estado"]; proximo_seguimiento: string | null; convertido_tenant_id: string | null; created_at: string; updated_at: string };
+        Insert: { id?: string; nombre: string; email?: string | null; telefono?: string | null; empresa?: string | null; plan_interes?: Enums["plan_tipo"] | null; plantilla_interes?: Enums["plantilla_tipo"] | null; mensaje?: string | null; origen?: string | null; utm_source?: string | null; utm_medium?: string | null; utm_campaign?: string | null; utm_term?: string | null; utm_content?: string | null; estado?: Enums["prospect_estado"]; proximo_seguimiento?: string | null; convertido_tenant_id?: string | null; created_at?: string; updated_at?: string };
         Update: Partial<Database["public"]["Tables"]["prospects"]["Insert"]>;
+        Relationships: [];
+      };
+      prospect_activities: {
+        Row: { id: string; prospect_id: string; tipo: Enums["prospect_activity_tipo"]; detalle: string | null; estado_nuevo: Enums["prospect_estado"] | null; created_by: string | null; created_at: string };
+        Insert: { id?: string; prospect_id: string; tipo?: Enums["prospect_activity_tipo"]; detalle?: string | null; estado_nuevo?: Enums["prospect_estado"] | null; created_by?: string | null; created_at?: string };
+        Update: Partial<Database["public"]["Tables"]["prospect_activities"]["Insert"]>;
         Relationships: [];
       };
       plantilla_defaults: {

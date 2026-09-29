@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import "./globals.css";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://rentflow.cl"),
   title: {
     default: "RentFlow — Plataforma de landing pages",
     template: "%s · RentFlow",

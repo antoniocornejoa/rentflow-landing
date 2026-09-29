@@ -7,10 +7,21 @@ import {
   ArrowRight, Chevron, Whatsapp,
 } from "@/components/marketing/icons";
 
+const DESC =
+  "Landing pages en arriendo para pymes de Talca. Una página profesional que convierte visitas en contactos por WhatsApp. Plan mensual, todo incluido, lista en pocos días.";
+
 export const metadata: Metadata = {
   title: "RentFlow — Que tu negocio suene el teléfono este mes",
-  description:
-    "Landing pages en arriendo para pymes de Talca. Una página profesional que convierte visitas en contactos por WhatsApp. Plan mensual, todo incluido, lista en pocos días.",
+  description: DESC,
+  alternates: { canonical: "/" },
+  openGraph: {
+    title: "RentFlow — Que tu negocio suene el teléfono este mes",
+    description: DESC,
+    url: "https://rentflow.cl",
+    siteName: "RentFlow",
+    locale: "es_CL",
+    type: "website",
+  },
 };
 
 const CTA_PRIMARY =

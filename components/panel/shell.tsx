@@ -35,6 +35,20 @@ export function PanelShell({
             </form>
           </div>
         </div>
+        {/* Menú móvil: tira horizontal desplazable (el nav de escritorio está oculto en teléfono). */}
+        {(nav ?? []).length > 0 ? (
+          <nav className="flex gap-1 overflow-x-auto px-3 pb-2 text-sm sm:hidden">
+            {(nav ?? []).map((n) => (
+              <Link
+                key={n.href}
+                href={n.href}
+                className="whitespace-nowrap rounded-full px-3 py-1.5 text-slate-600 hover:bg-black/5"
+              >
+                {n.label}
+              </Link>
+            ))}
+          </nav>
+        ) : null}
       </header>
       <main className="mx-auto max-w-6xl px-4 py-8">{children}</main>
     </div>

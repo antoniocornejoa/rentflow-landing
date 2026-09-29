@@ -153,6 +153,12 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["error_events"]["Insert"]>;
         Relationships: [];
       };
+      marketing_spend: {
+        Row: { id: string; fecha: string; canal: string; campana: string | null; monto: number; moneda: string; notas: string | null; created_by: string | null; created_at: string };
+        Insert: { id?: string; fecha?: string; canal: string; campana?: string | null; monto: number; moneda?: string; notas?: string | null; created_by?: string | null; created_at?: string };
+        Update: Partial<Database["public"]["Tables"]["marketing_spend"]["Insert"]>;
+        Relationships: [];
+      };
     };
     Views: { [_ in never]: never };
     Functions: {

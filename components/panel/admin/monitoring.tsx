@@ -43,6 +43,8 @@ const ACCION_LABEL: Record<string, string> = {
   "contenido.editado": "Editó contenido",
   "cambio.solicitado": "Solicitó cambio",
   "lead.atendido": "Atendió contacto",
+  "publicidad.registrada": "Registró gasto de publicidad",
+  "publicidad.eliminada": "Eliminó gasto de publicidad",
 };
 
 function Pill({ text, cls }: { text: string; cls: string }) {

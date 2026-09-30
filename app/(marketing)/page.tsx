@@ -21,6 +21,13 @@ export const metadata: Metadata = {
     siteName: "RentFlow",
     locale: "es_CL",
     type: "website",
+    images: [{ url: "/og.png", width: 1200, height: 630, alt: "RentFlow — Que tu negocio suene el teléfono" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "RentFlow — Que tu negocio suene el teléfono este mes",
+    description: DESC,
+    images: ["/og.png"],
   },
 };
 

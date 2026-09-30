@@ -76,6 +76,14 @@ export function AltaForm({ rootDomain }: { rootDomain: string }) {
       </div>
 
       <label className="flex flex-col gap-1 text-sm font-medium">
+        Primer mes
+        <select name="primer_mes" className={field} defaultValue="gratis">
+          <option value="gratis">Gratis (primer cobro en 1 mes)</option>
+          <option value="cobra">Se cobra desde ahora</option>
+        </select>
+      </label>
+
+      <label className="flex flex-col gap-1 text-sm font-medium">
         Correo del dueño (accede al portal)
         <input name="owner_email" type="email" required className={field} />
       </label>

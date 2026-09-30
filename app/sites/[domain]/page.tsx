@@ -35,7 +35,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   if (!tenant || tenant.estado === "cancelado") {
     return { title: "Sitio no encontrado", robots: { index: false, follow: false } };
   }
-  if (tenant.estado !== "activo") {
+  if (tenant.estado !== "activo" && tenant.estado !== "moroso") {
     return { title: tenant.nombre_negocio, robots: { index: false, follow: false } };
   }
 
@@ -66,7 +66,9 @@ export default async function TenantLandingPage({ params }: PageProps) {
 
   if (!tenant || tenant.estado === "cancelado") notFound();
   if (tenant.estado === "onboarding") return <ComingSoon nombre={tenant.nombre_negocio} />;
-  if (tenant.estado === "suspendido" || tenant.estado === "moroso") {
+  // "moroso" = atrasado en el pago pero con período de gracia: la página sigue
+  // arriba. Sólo "suspendido" la baja a mantención.
+  if (tenant.estado === "suspendido") {
     return <Mantencion nombre={tenant.nombre_negocio} />;
   }
 

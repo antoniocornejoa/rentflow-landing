@@ -1,11 +1,13 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdmin } from "@/lib/auth";
 import { logAudit } from "@/lib/monitoring";
 import { ROOT_DOMAIN } from "@/lib/env";
+import { sumarMeses, fechaISO } from "@/lib/dates";
 import { revalidateTenant, revalidateTenantHost } from "@/lib/tenant/revalidate";
 import { schemaPorPlantilla, type Plantilla } from "@/lib/content/schema";
 import type { Json } from "@/lib/supabase/database.types";
@@ -22,6 +24,7 @@ const zAlta = z.object({
   monto: z.coerce.number().int().nonnegative(),
   dia_cobro: z.coerce.number().int().min(1).max(28),
   owner_email: z.string().email(),
+  primer_mes: z.enum(["gratis", "cobra"]).default("gratis"),
 });
 
 export type AltaState = { error?: string };
@@ -77,12 +80,16 @@ export async function createTenant(_prev: AltaState, formData: FormData): Promis
   ]);
   if (cErr || thErr) return { error: "No se pudo inicializar el contenido del tenant" };
 
-  // 3) Suscripción
+  // 3) Suscripción. "primer mes gratis" = primer cobro en 1 mes; "cobra" = ahora.
+  const hoyDate = new Date();
+  const primerCobro = input.primer_mes === "gratis" ? sumarMeses(hoyDate, 1) : hoyDate;
   await supabase.from("subscriptions").insert({
     tenant_id: tenantId,
     plan: input.plan,
     monto: input.monto,
     dia_cobro: input.dia_cobro,
+    inicio: fechaISO(hoyDate),
+    proximo_cobro: fechaISO(primerCobro),
   });
 
   // 4) Dominio propio (subdominio bajo el wildcard, ya servible = verificado)
@@ -174,4 +181,89 @@ export async function saveContent(tenantId: string, plantilla: Plantilla, rawJso
   });
   revalidateTenant(tenantId);
   return { ok: true };
+}
+
+// ── Facturación ──────────────────────────────────────────────────────────────
+
+/** Reactiva al cliente si estaba moroso/suspendido (tras pagar o regalar mes). */
+async function reactivarSiCorresponde(
+  supabase: ReturnType<typeof createAdminClient>,
+  tenantId: string,
+): Promise<void> {
+  const { data: t } = await supabase.from("tenants").select("estado").eq("id", tenantId).maybeSingle();
+  if (t && (t.estado === "moroso" || t.estado === "suspendido")) {
+    await supabase.from("tenants").update({ estado: "activo" }).eq("id", tenantId);
+    revalidateTenant(tenantId);
+  }
+}
+
+/** Registra un pago del cliente: avanza el próximo cobro un mes y lo deja al día. */
+export async function registrarPago(tenantId: string): Promise<void> {
+  const admin = await requireAdmin();
+  const supabase = createAdminClient();
+
+  const { data: sub } = await supabase
+    .from("subscriptions")
+    .select("id, monto, moneda, proximo_cobro")
+    .eq("tenant_id", tenantId)
+    .maybeSingle();
+  if (!sub) return;
+
+  const hoy = new Date();
+  const base = sub.proximo_cobro ? new Date(`${sub.proximo_cobro}T00:00:00Z`) : hoy;
+  const periodo = sub.proximo_cobro ?? fechaISO(hoy);
+
+  await supabase.from("payments").insert({
+    tenant_id: tenantId,
+    subscription_id: sub.id,
+    periodo,
+    monto: sub.monto,
+    moneda: sub.moneda ?? "CLP",
+    estado: "pagado",
+    metodo: "manual",
+    pagado_at: hoy.toISOString(),
+  });
+  await supabase
+    .from("subscriptions")
+    .update({ proximo_cobro: fechaISO(sumarMeses(base, 1)), ultimo_pago: fechaISO(hoy), estado_pago: "al_dia" })
+    .eq("id", sub.id);
+
+  await reactivarSiCorresponde(supabase, tenantId);
+  await logAudit({ actor: admin, accion: "pago.registrado", entidad: "subscription", entidadId: sub.id, tenantId, detalle: { monto: sub.monto, periodo } });
+  revalidatePath(`/tenants/${tenantId}`);
+}
+
+/** Regala un mes: corre el próximo cobro un mes sin registrar pago (mes gratis). */
+export async function regalarMes(tenantId: string): Promise<void> {
+  const admin = await requireAdmin();
+  const supabase = createAdminClient();
+
+  const { data: sub } = await supabase.from("subscriptions").select("id, proximo_cobro").eq("tenant_id", tenantId).maybeSingle();
+  if (!sub) return;
+
+  const base = sub.proximo_cobro ? new Date(`${sub.proximo_cobro}T00:00:00Z`) : new Date();
+  await supabase
+    .from("subscriptions")
+    .update({ proximo_cobro: fechaISO(sumarMeses(base, 1)), estado_pago: "al_dia" })
+    .eq("id", sub.id);
+
+  await reactivarSiCorresponde(supabase, tenantId);
+  await logAudit({ actor: admin, accion: "pago.regalado", entidad: "subscription", entidadId: sub.id, tenantId });
+  revalidatePath(`/tenants/${tenantId}`);
+}
+
+const zProximoCobro = z.object({
+  tenant_id: z.string().uuid(),
+  fecha: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+});
+
+/** Ajusta manualmente la fecha del próximo cobro. */
+export async function setProximoCobro(formData: FormData): Promise<void> {
+  const admin = await requireAdmin();
+  const parsed = zProximoCobro.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return;
+  const supabase = createAdminClient();
+  await supabase.from("subscriptions").update({ proximo_cobro: parsed.data.fecha }).eq("tenant_id", parsed.data.tenant_id);
+  await logAudit({ actor: admin, accion: "pago.fecha", entidad: "subscription", tenantId: parsed.data.tenant_id, detalle: { fecha: parsed.data.fecha } });
+  revalidatePath(`/tenants/${parsed.data.tenant_id}`);
 }

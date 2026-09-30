@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { isAuthorizedCron } from "@/lib/cron/secret";
 import { runRollup } from "@/lib/cron/rollup";
 import { runSeguimientos } from "@/lib/cron/seguimientos";
+import { runBilling } from "@/lib/billing";
 import { recordJob } from "@/lib/monitoring";
 
 export const runtime = "nodejs";
@@ -20,7 +21,14 @@ export async function GET(req: Request) {
     } catch (e) {
       seguimientos = { error: e instanceof Error ? e.message : "error" };
     }
-    return NextResponse.json({ ok: true, ...result, seguimientos });
+    // Cobranza automática (dunning): marca moroso/suspende según vencimiento.
+    let billing: unknown = null;
+    try {
+      billing = await recordJob("cron.billing", () => runBilling());
+    } catch (e) {
+      billing = { error: e instanceof Error ? e.message : "error" };
+    }
+    return NextResponse.json({ ok: true, ...result, seguimientos, billing });
   } catch (e) {
     return NextResponse.json({ ok: false, error: e instanceof Error ? e.message : "error" }, { status: 500 });
   }

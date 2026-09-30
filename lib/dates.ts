@@ -34,3 +34,13 @@ export function claveMesDe(iso: string): string {
   const d = new Date(iso);
   return claveMes(new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1)));
 }
+
+/** Suma `n` meses a una fecha (UTC). */
+export function sumarMeses(desde: Date, n: number): Date {
+  return new Date(Date.UTC(desde.getUTCFullYear(), desde.getUTCMonth() + n, desde.getUTCDate()));
+}
+
+/** Fecha YYYY-MM-DD (UTC). */
+export function fechaISO(d: Date): string {
+  return d.toISOString().slice(0, 10);
+}

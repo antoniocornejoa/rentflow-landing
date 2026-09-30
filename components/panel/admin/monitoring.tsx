@@ -48,6 +48,9 @@ const ACCION_LABEL: Record<string, string> = {
   "prospecto.actividad": "Registró avance de prospecto",
   "prospecto.estado": "Cambió etapa de prospecto",
   "prospecto.seguimiento": "Agendó seguimiento",
+  "pago.registrado": "Registró pago",
+  "pago.regalado": "Regaló un mes",
+  "pago.fecha": "Cambió fecha de cobro",
 };
 
 function Pill({ text, cls }: { text: string; cls: string }) {

@@ -6,6 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { PanelShell } from "@/components/panel/shell";
 import { Badge } from "@/components/panel/badge";
 import { ContentEditor } from "@/components/panel/admin/content-editor";
+import { BillingPanel, type SubInfo } from "@/components/panel/admin/billing-panel";
 import { setTenantEstado } from "@/app/(platform)/panel/tenants/actions";
 import type { Plantilla } from "@/lib/content/schema";
 
@@ -24,9 +25,14 @@ export default async function TenantDetailPage({ params }: { params: Promise<{ i
     .maybeSingle();
   if (!tenant) notFound();
 
-  const [{ data: content }, { data: domains }] = await Promise.all([
+  const [{ data: content }, { data: domains }, { data: sub }] = await Promise.all([
     supabase.from("tenant_content").select("content_published").eq("tenant_id", id).maybeSingle(),
     supabase.from("tenant_domains").select("hostname, is_primary, verificado").eq("tenant_id", id),
+    supabase
+      .from("subscriptions")
+      .select("monto, moneda, dia_cobro, estado_pago, proximo_cobro, ultimo_pago")
+      .eq("tenant_id", id)
+      .maybeSingle(),
   ]);
 
   const primary = domains?.find((d) => d.is_primary) ?? domains?.[0];
@@ -50,6 +56,8 @@ export default async function TenantDetailPage({ params }: { params: Promise<{ i
           </p>
         ) : null}
       </div>
+
+      <BillingPanel tenantId={tenant.id} sub={(sub as SubInfo) ?? null} />
 
       <div className="mb-6 flex flex-wrap gap-2">
         <form action={setTenantEstado.bind(null, tenant.id, "activo")}>
